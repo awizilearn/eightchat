@@ -14,40 +14,29 @@ async function RecommendedCreators() {
     subscriptionHistory: user.subscriptions,
   };
 
+  let recommendedCreators: import('@/lib/data').Creator[] = [];
+
   try {
     const { recommendations } = await recommendContent(recommendationInput);
-    const recommendedCreators = findCreatorsByIds(recommendations);
-    
-    // Fallback if AI gives no results or IDs that don't match our mock data
-    if (recommendedCreators.length === 0) {
-      // Return a few creators as a fallback
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {creators.slice(0, 3).map((creator) => (
-            <CreatorCard key={creator.id} creator={creator} />
-          ))}
-        </div>
-      );
-    }
-    
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {recommendedCreators.map((creator) => (
-          <CreatorCard key={creator.id} creator={creator} />
-        ))}
-      </div>
-    );
+    recommendedCreators = findCreatorsByIds(recommendations);
   } catch (error) {
-    console.error("AI recommendation failed:", error);
-    // Render a fallback in case of AI error
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {creators.slice(1, 4).map((creator) => (
-          <CreatorCard key={creator.id} creator={creator} />
-        ))}
-      </div>
-    );
+    console.error('AI recommendation failed, showing fallback creators.', error);
+    // In case of an error, we'll fall through to the logic below which handles an empty list.
   }
+  
+  // If AI gives no results, IDs that don't match, or an error occurred, show a fallback.
+  if (recommendedCreators.length === 0) {
+    // Return a few creators as a fallback
+    recommendedCreators = creators.slice(0, 3);
+  }
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {recommendedCreators.map((creator) => (
+        <CreatorCard key={creator.id} creator={creator} />
+      ))}
+    </div>
+  );
 }
 
 function RecommendedCreatorsSkeleton() {
