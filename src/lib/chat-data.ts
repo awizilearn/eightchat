@@ -28,6 +28,4 @@ export interface Conversation {
   participantIds: string[];
   lastMessage: string;
   updatedAt: Timestamp;
-  // This will be enriched on the client
-  otherParticipant?: (UserProfile & { id: string }) | undefined;
 }

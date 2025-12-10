@@ -3,13 +3,14 @@ import { useState, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Search, Users } from 'lucide-react';
-import type { Conversation } from '@/lib/chat-data';
+import type { Conversation, UserProfile } from '@/lib/chat-data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore } from '@/firebase';
 
 
 const ConversationItem = ({
@@ -21,10 +22,22 @@ const ConversationItem = ({
   isSelected: boolean;
   onSelect: (id: string) => void;
 }) => {
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  const participant = convo.otherParticipant;
+  const otherParticipantId = useMemo(() => {
+    return convo.participantIds.find(id => id !== user?.uid);
+  }, [convo.participantIds, user]);
 
-  if (!participant) {
+  const participantRef = useMemo(() => {
+      if (!firestore || !otherParticipantId) return null;
+      return doc(firestore, 'users', otherParticipantId);
+  }, [firestore, otherParticipantId]);
+
+  const { data: participantDoc, loading } = useDoc(participantRef);
+  const participant = participantDoc?.data() as UserProfile;
+
+  if (loading) {
     return (
         <div className="flex items-center gap-3 p-3">
             <Skeleton className="h-12 w-12 rounded-full" />
@@ -48,12 +61,12 @@ const ConversationItem = ({
       )}
     >
       <Avatar className="h-12 w-12 border">
-        <AvatarImage src={participant.photoURL} />
-        <AvatarFallback>{participant.displayName?.charAt(0)}</AvatarFallback>
+        <AvatarImage src={participant?.photoURL} />
+        <AvatarFallback>{participant?.displayName?.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1 overflow-hidden">
         <div className="flex justify-between items-center">
-          <p className="font-semibold truncate">{participant.displayName}</p>
+          <p className="font-semibold truncate">{participant?.displayName}</p>
           <p className="text-xs text-muted-foreground whitespace-nowrap">
             {convo.updatedAt && convo.updatedAt instanceof Timestamp ? formatDistanceToNow(convo.updatedAt.toDate(), {
               addSuffix: true,
@@ -81,11 +94,12 @@ export function ConversationList({
   loading
 }: ConversationListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useUser();
   
   const filteredConversations = useMemo(() => {
+    // This is a simplified search. A real implementation would need to fetch users to search by name.
     if (!searchTerm) return conversations;
     return conversations.filter(c => 
-      c.otherParticipant?.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [conversations, searchTerm]);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type DependencyList } from 'react';
+import { useMemo, useRef, type DependencyList } from 'react';
 import {
   Query,
   DocumentReference,
@@ -10,33 +10,37 @@ import {
 
 type FirebaseRef = Query | DocumentReference;
 
-let prevRef: FirebaseRef | null = null;
-
 // This is a custom hook that memoizes a Firestore query or document reference.
 // It's important to prevent re-renders when the query or reference hasn't changed.
-export function useMemoFirebase<T extends FirebaseRef>(
-  factory: () => T | null,
+export function useMemoFirebase<T extends FirebaseRef | null>(
+  factory: () => T,
   deps: DependencyList | undefined
-): T | null {
+): T {
+  const ref = useRef<T | null>(null);
+
   const newRef = useMemo(factory, deps);
 
-  // This is a bit of a hack to prevent re-renders when the query or reference
-  // is the same as the previous render. Firestore objects are always different
-  // instances, so we need to use the `queryEqual` and `refEqual` helpers.
   if (newRef) {
-    if (prevRef) {
-      if (newRef instanceof Query && prevRef instanceof Query) {
-        if (queryEqual(newRef, prevRef)) {
-          return prevRef as T;
+    if (ref.current) {
+        // Both are queries
+        if (newRef instanceof Query && ref.current instanceof Query) {
+            if (queryEqual(newRef, ref.current)) {
+                return ref.current as T;
+            }
+        } 
+        // Both are document references
+        else if (newRef instanceof DocumentReference && ref.current instanceof DocumentReference) {
+            if (refEqual(newRef, ref.current)) {
+                return ref.current as T;
+            }
         }
-      } else if (newRef instanceof DocumentReference && prevRef instanceof DocumentReference) {
-        if (refEqual(newRef, prevRef)) {
-          return prevRef as T;
-        }
-      }
     }
+  } else if (ref.current === null) {
+      // If newRef is null and the current ref is also null, no change.
+      return ref.current as T;
   }
 
-  prevRef = newRef;
+
+  ref.current = newRef;
   return newRef;
 }

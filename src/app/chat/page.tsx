@@ -12,13 +12,10 @@ import {
   serverTimestamp,
   orderBy,
   updateDoc,
-  getDocs,
-  Timestamp,
 } from 'firebase/firestore';
 import {
   type Conversation,
   type Message,
-  type UserProfile,
 } from '@/lib/chat-data';
 import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
@@ -28,77 +25,24 @@ export default function ChatPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
-  const [enrichedConversations, setEnrichedConversations] = useState<Conversation[]>([]);
-  const [conversationsLoading, setConversationsLoading] = useState(true);
 
   // 1. Fetch conversations for the current user
   const conversationsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
       collection(firestore, 'conversations'),
-      where('participantIds', 'array-contains', user.uid)
+      where('participantIds', 'array-contains', user.uid),
+      orderBy('updatedAt', 'desc')
     );
   }, [firestore, user]);
 
-  const { data: conversationsData, loading: initialConversationsLoading } = useCollection(conversationsQuery);
+  const { data: conversationsData, loading: conversationsLoading } = useCollection(conversationsQuery);
   
-  useEffect(() => {
-    const enrichConversations = async () => {
-      if (!user || !firestore || !conversationsData) {
-        if (!initialConversationsLoading) {
-          setConversationsLoading(false);
-          setEnrichedConversations([]);
-        }
-        return;
-      }
-      
-      setConversationsLoading(true);
+  const conversations: Conversation[] = useMemo(() => {
+     if (!conversationsData) return [];
+     return conversationsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Conversation));
+  }, [conversationsData]);
 
-      const convos = conversationsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Conversation));
-      const otherParticipantIds = convos.flatMap(c => c.participantIds.filter(id => id !== user.uid));
-      
-      if (otherParticipantIds.length === 0) {
-        setEnrichedConversations(convos);
-        setConversationsLoading(false);
-        return;
-      }
-      
-      const uniqueParticipantIds = [...new Set(otherParticipantIds)];
-      
-      try {
-        const usersQuery = query(collection(firestore, 'users'), where('__name__', 'in', uniqueParticipantIds));
-        const usersSnapshot = await getDocs(usersQuery);
-        const participantsMap = new Map<string, UserProfile>();
-        usersSnapshot.forEach(doc => {
-          participantsMap.set(doc.id, doc.data() as UserProfile);
-        });
-
-        const finalConversations = convos.map(convo => {
-          const otherId = convo.participantIds.find(id => id !== user.uid);
-          const participant = otherId ? participantsMap.get(otherId) : undefined;
-          return {
-            ...convo,
-            otherParticipant: participant && otherId ? { ...participant, id: otherId } : undefined
-          };
-        }).sort((a, b) => {
-          const dateA = a.updatedAt instanceof Timestamp ? a.updatedAt.toDate() : new Date(0);
-          const dateB = b.updatedAt instanceof Timestamp ? b.updatedAt.toDate() : new Date(0);
-          return dateB.getTime() - dateA.getTime();
-        });
-        
-        setEnrichedConversations(finalConversations);
-      } catch (error) {
-        console.error("Error enriching conversations:", error);
-        setEnrichedConversations(convos); // Fallback to unenriched convos
-      } finally {
-        setConversationsLoading(false);
-      }
-    };
-
-    enrichConversations();
-
-  }, [conversationsData, user, firestore, initialConversationsLoading]);
-  
 
   // 2. Fetch messages for the selected conversation
   const messagesQuery = useMemoFirebase(() => {
@@ -126,10 +70,10 @@ export default function ChatPage() {
   // 3. Get the selected conversation object
   const selectedConversation = useMemo(() => {
     if (!selectedConversationId) return null;
-    return enrichedConversations.find(
+    return conversations.find(
       (c) => c.id === selectedConversationId
     );
-  }, [selectedConversationId, enrichedConversations]);
+  }, [selectedConversationId, conversations]);
 
 
   const handleSelectConversation = (conversationId: string) => {
@@ -170,7 +114,7 @@ export default function ChatPage() {
       <Header />
       <main className="flex-1 overflow-hidden">
         <ChatLayout
-          conversations={enrichedConversations}
+          conversations={conversations}
           selectedConversation={selectedConversation}
           messages={messages}
           onSelectConversation={handleSelectConversation}
