@@ -30,21 +30,12 @@ export type FirebaseProps = {
   firestore: Firestore;
 };
 
-export function FirebaseProvider({ children }: PropsWithChildren) {
-  const [firebase, setFirebase] = useState<FirebaseProps | null>(null);
-
-  useEffect(() => {
-    const apps = initializeFirebase();
-    setFirebase(apps);
-  }, []);
-
-  if (!firebase) {
-    // TODO: Add a loading spinner.
-    return null;
-  }
-
+export function FirebaseProvider({
+  children,
+  ...firebaseProps
+}: PropsWithChildren<FirebaseProps>) {
   return (
-    <FirebaseContext.Provider value={firebase}>
+    <FirebaseContext.Provider value={firebaseProps}>
       {children}
     </FirebaseContext.Provider>
   );

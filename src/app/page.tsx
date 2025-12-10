@@ -1,103 +1,70 @@
-import { Header } from '@/components/common/header';
-import { CreatorCard } from '@/components/creators/creator-card';
-import { creators, findCreatorsByIds, user } from '@/lib/data';
-import { recommendContent } from '@/ai/flows/content-recommendation';
+'use client';
+
+import { ArrowRight, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import placeholderData from '@/lib/placeholder-images.json';
+import type { ImagePlaceholder } from '@/lib/placeholder-images';
 
-async function RecommendedCreators() {
-  // Use a mock user's subscription history to get recommendations
-  const recommendationInput = {
-    userId: 'mock-user-01',
-    subscriptionHistory: user.subscriptions,
-  };
+const PlaceHolderImages: ImagePlaceholder[] = placeholderData.placeholderImages;
 
-  let recommendedCreators: import('@/lib/data').Creator[] = [];
+export default function WelcomePage() {
+  const router = useRouter();
 
-  try {
-    const { recommendations } = await recommendContent(recommendationInput);
-    recommendedCreators = findCreatorsByIds(recommendations);
-  } catch (error) {
-    console.error('AI recommendation failed, showing fallback creators.', error);
-    // In case of an error, we'll fall through to the logic below which handles an empty list.
-  }
-  
-  // If AI gives no results, IDs that don't match, or an error occurred, show a fallback.
-  if (recommendedCreators.length === 0) {
-    // Return a few creators as a fallback
-    recommendedCreators = creators.slice(0, 3);
-  }
-  
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {recommendedCreators.map((creator) => (
-        <CreatorCard key={creator.id} creator={creator} />
-      ))}
-    </div>
+  const onboardingImage = PlaceHolderImages.find(
+    (img) => img.id === 'onboarding-image'
   );
-}
 
-function RecommendedCreatorsSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="space-y-4">
-          <Skeleton className="h-40 w-full" />
-          <div className="flex items-end gap-4">
-            <Skeleton className="h-20 w-20 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </div>
-           <Skeleton className="h-4 w-full" />
-           <Skeleton className="h-4 w-5/6" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-6">
+      <main className="flex w-full max-w-md flex-col items-center text-center">
+        <ShieldCheck className="h-10 w-10 text-primary" />
+        
+        <div className="my-8 w-full overflow-hidden rounded-2xl border-2 border-border shadow-lg">
+           {onboardingImage && (
+            <Image
+                src={onboardingImage.imageUrl}
+                alt={onboardingImage.description}
+                width={600}
+                height={400}
+                className="aspect-[4/3] w-full object-cover"
+                data-ai-hint={onboardingImage.imageHint}
+                priority
+            />
+           )}
         </div>
-      ))}
-    </div>
-  )
-}
 
-export default function Home() {
-  // Exclude recommended creators from the main discovery list to avoid duplication
-  const otherCreators = creators.filter(c => !user.subscriptions.includes(c.id));
+        <h1 className="font-headline text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+          Unlock Exclusive Worlds
+        </h1>
+        <p className="mt-4 max-w-xs text-base text-muted-foreground sm:text-lg">
+          Access premium content from your favorite creators. Subscribe securely
+          with Stripe or Crypto and connect with end-to-end encrypted
+          messaging.
+        </p>
 
-  return (
-    <>
-      <Header />
-      <main className="container mx-auto py-8 px-4">
-        <section className="mb-16">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-headline text-3xl font-bold text-primary">
-              Recommended For You
-            </h2>
-            <Link href="#" className="flex items-center gap-2 text-accent-foreground hover:text-primary transition-colors">
-              See All <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <Suspense fallback={<RecommendedCreatorsSkeleton />}>
-            <RecommendedCreators />
-          </Suspense>
-        </section>
-
-        <section>
-           <div className="flex justify-between items-center mb-6">
-            <h2 className="font-headline text-3xl font-bold">
-              Discover Creators
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {otherCreators.map((creator) => (
-              <CreatorCard key={creator.id} creator={creator} />
-            ))}
-          </div>
-        </section>
+        <div className="mt-10 flex w-full flex-col gap-4">
+          <Button
+            size="lg"
+            className="h-12 text-base"
+            onClick={() => router.push('/login')}
+          >
+            Get Started
+          </Button>
+          <Button
+            variant="link"
+            className="text-sm text-muted-foreground"
+            onClick={() => router.push('/login')}
+          >
+            Already have an account? Sign In
+          </Button>
+        </div>
       </main>
-      <footer className="py-8 mt-16 text-center text-muted-foreground border-t">
-         <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
+      <footer className="mt-8 text-center text-xs text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
       </footer>
-    </>
+    </div>
   );
 }

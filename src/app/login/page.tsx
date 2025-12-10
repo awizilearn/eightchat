@@ -51,12 +51,13 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
       const checkUserProfile = async () => {
+        if (!firestore) return;
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          router.push('/');
+          router.push('/discover');
         } else {
-          router.push('/complete-profile');
+          router.push('/complete-profile?new-user=true');
         }
       };
       checkUserProfile();
@@ -64,6 +65,7 @@ export default function LoginPage() {
   }, [user, loading, router, firestore]);
 
   const handleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -90,20 +92,27 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Create an account</CardTitle>
           <CardDescription>
-            Sign in to access your exclusive content.
+            Join the enclave to access exclusive content.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Button
             className="w-full h-12 text-md"
             variant="outline"
             onClick={handleSignIn}
           >
             <GoogleIcon className="mr-2 h-6 w-6" />
-            Sign in with Google
+            Sign up with Google
           </Button>
+          <div className="text-center text-sm text-muted-foreground">
+             <p>Already have an account?{' '}
+                <button onClick={() => router.push('/')} className="text-primary hover:underline">
+                    Sign In
+                </button>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

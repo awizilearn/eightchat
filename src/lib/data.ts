@@ -1,5 +1,7 @@
 import type { ImagePlaceholder } from './placeholder-images';
-import { PlaceHolderImages } from './placeholder-images';
+import placeholderData from './placeholder-images.json';
+
+const PlaceHolderImages: ImagePlaceholder[] = placeholderData.placeholderImages;
 
 const getImage = (id: string): ImagePlaceholder => {
   const image = PlaceHolderImages.find((img) => img.id === id);

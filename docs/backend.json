@@ -75,6 +75,39 @@
                 }
             },
             "required": ["senderId", "text", "createdAt"]
+        },
+        "ModerationAction": {
+            "title": "Moderation Action",
+            "description": "Represents a moderation action taken by an admin or moderator.",
+            "type": "object",
+            "properties": {
+                "actionType": {
+                    "type": "string",
+                    "enum": ["contentApproved", "userBanned", "warningIssued", "contentRejected", "userMuted"]
+                },
+                "targetType": {
+                    "type": "string",
+                    "enum": ["user", "post"]
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "moderatorId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "number",
+                    "description": "Duration in hours, if applicable (e.g., for mutes)."
+                }
+            },
+            "required": ["actionType", "targetType", "targetId", "moderatorId", "timestamp"]
         }
     },
     "auth": {
@@ -98,6 +131,12 @@
                 "$ref": "#/backend/entities/Message"
             },
             "description": "Sub-collection to store messages for a specific conversation."
+        },
+        "/moderation-actions/{actionId}": {
+            "schema": {
+                "$ref": "#/backend/entities/ModerationAction"
+            },
+            "description": "Stores a log of all moderation actions."
         }
     }
 }

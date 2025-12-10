@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Crown, LogOut, Settings, User as UserIcon } from 'lucide-react';
+import { Crown, LogOut, MessageSquare, Settings, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -80,6 +80,10 @@ function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => router.push('/chat')}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            <span>Messages</span>
+          </DropdownMenuItem>
           <DropdownMenuItem>
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>

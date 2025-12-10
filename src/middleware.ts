@@ -13,19 +13,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
     
-  const publicPaths = ['/login'];
+  const publicPaths = ['/login', '/complete-profile', '/'];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
   // This cookie is set by Firebase Auth on the client side
   const authCookie = request.cookies.get('firebaseAuth');
 
   if (!authCookie && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (authCookie && isPublicPath) {
+     // if the path is not public and there is no auth cookie, redirect to home.
     return NextResponse.redirect(new URL('/', request.url));
   }
+
+  if (authCookie && (pathname === '/' || pathname === '/login' || (pathname === '/complete-profile' && !request.nextUrl.searchParams.get('new-user')))) {
+     return NextResponse.redirect(new URL('/discover', request.url));
+  }
+
 
   return NextResponse.next();
 }
