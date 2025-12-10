@@ -1,3 +1,106 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "creator-1-avatar",
+      "description": "Avatar for creator Elena Moreau",
+      "imageUrl": "https://images.unsplash.com/photo-1546961329-78bef0414d7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NTMyNTc1NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "creator-1-banner",
+      "description": "Banner for creator Elena Moreau",
+      "imageUrl": "https://images.unsplash.com/photo-1642453208368-7c09aa272829?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZmFzaGlvbiUyMHN0dWRpb3xlbnwwfHx8fDE3NjUyNjA3NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fashion studio"
+    },
+    {
+      "id": "creator-2-avatar",
+      "description": "Avatar for creator Kenji Tanaka",
+      "imageUrl": "https://images.unsplash.com/photo-1607031542107-f6f46b5d54e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjUyODg5NjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "creator-2-banner",
+      "description": "Banner for creator Kenji Tanaka",
+      "imageUrl": "https://images.unsplash.com/photo-1645542933735-e2b556e57d52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjdWxpbmFyeSUyMGtpdGNoZW58ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "culinary kitchen"
+    },
+    {
+      "id": "creator-3-avatar",
+      "description": "Avatar for creator Isabella Rossi",
+      "imageUrl": "https://images.unsplash.com/photo-1707000414103-c7c65b336e95?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpc3QlMjBwYWludHxlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "artist paint"
+    },
+    {
+      "id": "creator-3-banner",
+      "description": "Banner for creator Isabella Rossi",
+      "imageUrl": "https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8MTc2NTI3MDYzNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "art gallery"
+    },
+    {
+      "id": "creator-4-avatar",
+      "description": "Avatar for creator Marcus Thorne",
+      "imageUrl": "https://images.unsplash.com/photo-1639916765637-43de505e45a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3cml0ZXIlMjBkZXNrfGVufDB8fHx8MTc2NTM2NjcwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "writer desk"
+    },
+    {
+      "id": "creator-4-banner",
+      "description": "Banner for creator Marcus Thorne",
+      "imageUrl": "https://images.unsplash.com/photo-1723334538533-e0fbdaabc637?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dmludGFnZSUyMGxpYnJhcnl8ZW58MHx8fHwxNzY1MzYxNDM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vintage library"
+    },
+    {
+      "id": "content-1",
+      "description": "Abstract gold texture",
+      "imageUrl": "https://images.unsplash.com/photo-1556139930-c23fa4a4f934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWJzdHJhY3QlMjBnb2xkfGVufDB8fHx8MTc2NTMzNDQxOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract gold"
+    },
+    {
+      "id": "content-2",
+      "description": "Minimalist interior design",
+      "imageUrl": "https://images.unsplash.com/photo-1617326021886-53d6be1d7154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwaW50ZXJpb3J8ZW58MHx8fHwxNzY1MzMzNDA3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist interior"
+    },
+    {
+      "id": "content-3",
+      "description": "Gourmet dish plating",
+      "imageUrl": "https://images.unsplash.com/photo-1616671285410-2a676a9a433d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxnb3VybWV0JTIwZm9vZHxlbnwwfHx8fDE3NjUyNjM2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gourmet food"
+    },
+    {
+      "id": "content-4",
+      "description": "Fashion sketch",
+      "imageUrl": "https://images.unsplash.com/photo-1720031995259-f2d8ea9734fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXNoaW9uJTIwc2tldGNofGVufDB8fHx8MTc2NTMzMzAxNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fashion sketch"
+    },
+    {
+      "id": "content-5",
+      "description": "Oil painting canvas",
+      "imageUrl": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "oil painting"
+    },
+    {
+      "id": "content-6",
+      "description": "Cityscape at night",
+      "imageUrl": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "night cityscape"
+    },
+    {
+      "id": "content-7",
+      "description": "Handwritten manuscript",
+      "imageUrl": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "handwritten manuscript"
+    },
+    {
+      "id": "content-8",
+      "description": "Vintage camera",
+      "imageUrl": "https://images.unsplash.com/photo-1512390225428-a9d51c817f94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8MTc2NTI3NDA2Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vintage camera"
+    },
+    {
+      "id": "user-avatar",
+      "description": "Default user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1544502062-f82887f03d1c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBzaWxob3VldHRlfGVufDB8fHx8MTc2NTMxMjAyNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person silhouette"
+    }
+  ]
 }
