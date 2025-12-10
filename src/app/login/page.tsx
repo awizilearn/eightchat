@@ -4,7 +4,6 @@ import { useAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  signOut,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -17,6 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -43,14 +44,24 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, loading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/');
+      const checkUserProfile = async () => {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          router.push('/');
+        } else {
+          router.push('/complete-profile');
+        }
+      };
+      checkUserProfile();
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, firestore]);
 
   const handleSignIn = async () => {
     const provider = new GoogleAuthProvider();
