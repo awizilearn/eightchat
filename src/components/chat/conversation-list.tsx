@@ -94,7 +94,6 @@ export function ConversationList({
   loading
 }: ConversationListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const { user } = useUser();
   
   const filteredConversations = useMemo(() => {
     // This is a simplified search. A real implementation would need to fetch users to search by name.

@@ -1,12 +1,5 @@
 import { Timestamp } from "firebase/firestore";
 
-export interface Participant {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-}
-
 export interface UserProfile {
   displayName: string;
   photoURL: string;
