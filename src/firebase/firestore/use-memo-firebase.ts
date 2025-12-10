@@ -10,7 +10,7 @@ import {
 
 type FirebaseRef = Query | DocumentReference;
 
-let-prevRef: FirebaseRef | null = null;
+let prevRef: FirebaseRef | null = null;
 
 // This is a custom hook that memoizes a Firestore query or document reference.
 // It's important to prevent re-renders when the query or reference hasn't changed.

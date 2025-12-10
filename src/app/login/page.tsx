@@ -49,9 +49,9 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
+    // We only want to check the user profile if we are not loading, we have a user, AND firestore is ready.
+    if (!loading && user && firestore) {
       const checkUserProfile = async () => {
-        if (!firestore) return;
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
