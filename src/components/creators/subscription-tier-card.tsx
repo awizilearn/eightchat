@@ -48,28 +48,28 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-headline text-primary">Subscribe to {tier.name} Tier</DialogTitle>
+          <DialogTitle className="font-headline text-2xl text-primary">Abonnement au niveau {tier.name}</DialogTitle>
           <DialogDescription>
-            You are subscribing to {creatorName}'s {tier.name} tier for ${tier.price}/month.
+            Vous êtes sur le point de vous abonner au niveau {tier.name} de {creatorName} pour ${tier.price}/mois.
           </DialogDescription>
         </DialogHeader>
         <Separator />
         <div className="py-4 space-y-4">
-            <p className="text-sm text-muted-foreground">Choose your payment method to complete the subscription.</p>
-            <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start h-12 text-md gap-4 px-4">
+            <p className="text-sm text-muted-foreground">Choisissez votre méthode de paiement pour finaliser l'abonnement.</p>
+            <div className="space-y-3">
+                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center">
                     <StripeIcon className="text-[#6772E5]" />
-                    Pay with Stripe
+                    <span>Payer avec Stripe</span>
                 </Button>
-                <Button variant="outline" className="w-full justify-start h-12 text-md gap-4 px-4">
+                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center">
                     <CoinbaseIcon className="text-[#0052FF]" />
-                     Pay with Coinbase
+                     <span>Payer avec Coinbase</span>
                 </Button>
             </div>
         </div>
-        <DialogFooter>
-          <p className="text-xs text-muted-foreground text-center w-full">
-            By subscribing, you agree to our Terms of Service.
+        <DialogFooter className="!justify-center">
+          <p className="text-xs text-muted-foreground text-center">
+            En vous abonnant, vous acceptez nos Conditions d'utilisation.
           </p>
         </DialogFooter>
       </DialogContent>
@@ -85,11 +85,11 @@ export function SubscriptionTierCard({ tier, creatorName }: { tier: Subscription
       <CardHeader className="pb-4">
         <div className="flex justify-between items-center">
           <CardTitle className={`font-headline text-2xl ${isGold ? 'text-primary' : ''}`}>{tier.name}</CardTitle>
-          {isGold && <Badge variant="default" className="bg-primary text-primary-foreground">Most Popular</Badge>}
+          {isGold && <Badge variant="default" className="bg-primary text-primary-foreground">Le plus populaire</Badge>}
         </div>
         <div className="flex items-baseline gap-1">
           <span className="text-4xl font-bold">${tier.price}</span>
-          <span className="text-sm text-muted-foreground">/month</span>
+          <span className="text-sm text-muted-foreground">/mois</span>
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
