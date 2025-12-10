@@ -27,3 +27,4 @@ export {
   useAuth,
 } from './provider';
 export { FirebaseClientProvider } from './client-provider';
+export { useUser } from './auth/use-user';
