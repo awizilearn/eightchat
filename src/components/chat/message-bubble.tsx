@@ -9,8 +9,6 @@ import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { createStripeCheckoutSession } from '@/app/actions/payments';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface MessageBubbleProps {
@@ -23,7 +21,6 @@ interface MessageBubbleProps {
 function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () => void; }) {
     const { toast } = useToast();
     const { user } = useUser();
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const handlePurchase = async () => {
@@ -40,30 +37,18 @@ function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () =
         setIsLoading(true);
         toast({ title: "Initiation de l'achat..." });
 
-        const result = await createStripeCheckoutSession({
-            userId: user.uid,
-            itemId: message.id,
-            amount: message.contentPrice,
-            itemName: message.contentTitle,
-        });
+        // Simulate a successful API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         setIsLoading(false);
 
-        if (result.success) {
-             // In a real app, we'd redirect to Stripe. Here, we simulate success.
-             console.log("Stripe session created (simulation):", result.redirectUrl);
-             onUnlock();
-             toast({
-                 title: "Achat réussi!",
-                 description: `Vous avez débloqué "${message.contentTitle}".`,
-             });
-        } else {
-             toast({
-                variant: "destructive",
-                title: "Échec de l'achat",
-                description: result.error || "Une erreur est survenue.",
-            });
-        }
+        // In a real app, you would handle the response from your payment provider.
+        // Here, we just simulate success.
+        onUnlock();
+        toast({
+             title: "Achat réussi!",
+             description: `Vous avez débloqué "${message.contentTitle}".`,
+        });
     };
 
   return (
