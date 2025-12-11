@@ -7,6 +7,7 @@ import type { Message, Conversation, UserProfile } from '@/lib/chat-data';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import { useMemo } from 'react';
 import { doc } from 'firebase/firestore';
+import { Skeleton } from '../ui/skeleton';
 
 
 function SelectedConversationHeader({ conversation }: { conversation: Conversation }) {
@@ -28,18 +29,20 @@ function SelectedConversationHeader({ conversation }: { conversation: Conversati
     if (loading) {
         return (
             <div className="p-4 border-b">
-                <div className="animate-pulse">
-                    <div className="h-6 bg-muted rounded w-3/4"></div>
-                    <div className="h-4 bg-muted rounded w-1/2 mt-2"></div>
+                <div className="animate-pulse flex items-center space-x-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-4 border-b">
-            <h2 className="text-xl font-bold">{participant?.displayName}</h2>
-            <p className="text-sm text-muted-foreground">@{participant?.email}</p>
+        <div className="flex items-center gap-4 p-4 border-b">
+             <h2 className="text-xl font-bold">{participant?.displayName || 'Chat'}</h2>
         </div>
     );
 }

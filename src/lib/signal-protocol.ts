@@ -103,7 +103,15 @@ class SignalProtocolStoreImpl implements SignalProtocolStore {
 let store: SignalProtocolStoreImpl;
 function getStore(): SignalProtocolStoreImpl {
     if (!store) {
-        store = new SignalProtocolStoreImpl();
+        if (typeof window !== 'undefined') {
+            store = new SignalProtocolStoreImpl();
+        } else {
+            // This is a server-side render, return a dummy store
+            return {
+                get: () => Promise.resolve(undefined),
+                put: () => Promise.resolve(),
+            } as any;
+        }
     }
     return store;
 }

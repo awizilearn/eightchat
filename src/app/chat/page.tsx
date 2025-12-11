@@ -13,7 +13,7 @@ import {
   orderBy,
   updateDoc,
   Timestamp,
-  getDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { type Conversation, type Message, type UserProfile } from '@/lib/chat-data';
 import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
@@ -31,7 +31,7 @@ export default function ChatPage() {
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
-  >(initialConversationId);
+  >(null);
 
   const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
   const [unlockedMessages, setUnlockedMessages] = useState<Set<string>>(new Set());
@@ -152,13 +152,14 @@ export default function ChatPage() {
     
     // Fetch recipient's pre-key bundle from Firestore
     const recipientDocRef = doc(firestore, 'users', otherParticipantId);
-    const recipientDocSnap = await getDoc(recipientDocRef);
-    if (!recipientDocSnap.exists() || !recipientDocSnap.data().signalPreKeyBundle) {
+    const recipientDocSnap = await getDocs(query(collection(firestore, 'users'), where('__name__', '==', otherParticipantId)));
+    
+    if (recipientDocSnap.empty || !recipientDocSnap.docs[0].data().signalPreKeyBundle) {
         console.error("Recipient does not have a pre-key bundle.");
         return;
     }
 
-    const recipientProfile = recipientDocSnap.data() as UserProfile;
+    const recipientProfile = recipientDocSnap.docs[0].data() as UserProfile;
     const rehydratedBundle = rehydratePreKeyBundle(recipientProfile.signalPreKeyBundle);
     
     try {
@@ -211,12 +212,21 @@ export default function ChatPage() {
       return message;
     }
     
+    // For own messages, we don't need to decrypt, but we also don't have the plaintext
+    // This is a limitation of the current implementation. We'll show a placeholder.
+    if (message.senderId === user?.uid) {
+        return {
+            ...message,
+            text: message.text.startsWith('{') ? 'You: Encrypted message' : message.text,
+        }
+    }
+
     const decryptedText = decryptedMessages.get(message.id);
     return {
       ...message,
       text: decryptedText || "Déchiffrement...",
     };
-  }, [decryptedMessages]);
+  }, [decryptedMessages, user]);
 
   const handleUnlockContent = (messageId: string) => {
     setUnlockedMessages(prev => new Set(prev).add(messageId));

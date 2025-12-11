@@ -29,12 +29,12 @@ function AllCreators() {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className="space-y-2">
+                    <div key={i} className="flex flex-col space-y-4">
                         <Skeleton className="h-40 w-full" />
-                        <div className="flex items-center space-x-4 p-4">
-                            <Skeleton className="h-20 w-20 rounded-full" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[150px]" />
+                        <div className="flex items-end space-x-4 px-4">
+                            <Skeleton className="h-20 w-20 -mt-10 border-4 border-card rounded-full" />
+                            <div className="space-y-2 pb-2">
+                                <Skeleton className="h-5 w-[150px]" />
                                 <Skeleton className="h-4 w-[100px]" />
                             </div>
                         </div>

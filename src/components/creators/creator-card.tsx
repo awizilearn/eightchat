@@ -22,7 +22,7 @@ export function CreatorCard({ creator }: { creator: UserProfile & { id: string }
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           </div>
           <div className="p-4 pt-0 -mt-10 relative z-10 flex items-end gap-4">
-             <Avatar className="h-20 w-20 border-4 border-card group-hover:border-primary transition-colors">
+             <Avatar className="h-20 w-20 border-4 border-card group-hover:border-primary transition-colors duration-300">
               <AvatarImage src={creator.photoURL} alt={creator.displayName} />
               <AvatarFallback>{creator.displayName?.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -32,7 +32,9 @@ export function CreatorCard({ creator }: { creator: UserProfile & { id: string }
             </div>
           </div>
           <div className="px-4 pb-4">
-             <p className="text-sm text-foreground/80 h-10">{creator.bio}</p>
+             <p className="text-sm text-foreground/80 h-10 overflow-hidden text-ellipsis">
+                {creator.bio}
+             </p>
           </div>
         </CardContent>
       </Card>
