@@ -36,6 +36,14 @@ export default function ChatPage() {
   const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
   const [unlockedMessages, setUnlockedMessages] = useState<Set<string>>(new Set());
 
+  // Get current user's profile to check their role
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfileDoc } = useDoc(userProfileRef);
+  const userProfile = userProfileDoc?.data() as UserProfile;
+
   // Load from localStorage only on the client
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -175,6 +183,29 @@ export default function ChatPage() {
     }
   };
 
+  const handleSendPaidMessage = async (content: { title: string; price: number; imageUrl: string; }) => {
+    if (!user || !selectedConversationId || !firestore) return;
+
+    const messagesColRef = collection(firestore, 'conversations', selectedConversationId, 'messages');
+    const conversationDocRef = doc(firestore, 'conversations', selectedConversationId);
+
+    await addDoc(messagesColRef, {
+        senderId: user.uid,
+        text: 'Paid Content', // Placeholder text, not encrypted
+        createdAt: serverTimestamp(),
+        isPaid: true,
+        contentTitle: content.title,
+        contentPrice: content.price,
+        contentImageUrl: content.imageUrl,
+        contentType: 'image', // Or derive from URL if needed
+    });
+
+    await updateDoc(conversationDocRef, {
+        lastMessage: `Contenu payant : ${content.title}`,
+        updatedAt: serverTimestamp(),
+    });
+  };
+
   const getDisplayableMessage = useCallback((message: Message): Message => {
     if (message.isPaid) {
       return message;
@@ -206,7 +237,9 @@ export default function ChatPage() {
           messages={displayableMessages}
           onSelectConversation={handleSelectConversation}
           onSendMessage={handleSendMessage}
+          onSendPaidMessage={handleSendPaidMessage}
           currentUserId={user?.uid}
+          currentUserRole={userProfile?.role}
           conversationsLoading={conversationsLoading}
           messagesLoading={messagesLoading}
           unlockedMessages={unlockedMessages}

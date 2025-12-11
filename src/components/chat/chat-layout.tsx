@@ -51,7 +51,9 @@ interface ChatLayoutProps {
   messages: Message[];
   onSelectConversation: (conversationId: string) => void;
   onSendMessage: (text: string) => void;
+  onSendPaidMessage: (content: { title: string; price: number; imageUrl: string; }) => void;
   currentUserId?: string | null;
+  currentUserRole?: string;
   conversationsLoading: boolean;
   messagesLoading: boolean;
   unlockedMessages: Set<string>;
@@ -64,7 +66,9 @@ export function ChatLayout({
   messages,
   onSelectConversation,
   onSendMessage,
+  onSendPaidMessage,
   currentUserId,
+  currentUserRole,
   conversationsLoading,
   messagesLoading,
   unlockedMessages,
@@ -93,7 +97,11 @@ export function ChatLayout({
                 onUnlockContent={onUnlockContent}
             />
             <div className="p-4 border-t">
-              <MessageInput onSendMessage={onSendMessage} />
+              <MessageInput 
+                onSendMessage={onSendMessage} 
+                onSendPaidMessage={onSendPaidMessage}
+                isCreator={currentUserRole === 'createur'}
+              />
             </div>
           </>
         ) : conversationsLoading ? (
