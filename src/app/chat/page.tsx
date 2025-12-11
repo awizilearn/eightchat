@@ -100,31 +100,10 @@ export default function ChatPage() {
 
   const messages: Message[] = useMemo(() => {
     if (!messagesData) return [];
-    const regularMessages = messagesData.docs.map(
+    return messagesData.docs.map(
       (doc) => ({ id: doc.id, ...doc.data() } as Message)
     );
-
-    if (user && selectedConversationId) {
-      const otherParticipantId = conversations.find(c => c.id === selectedConversationId)?.participantIds.find(id => id !== user.uid);
-      const hasPaidMessage = regularMessages.some(m => m.isPaid);
-      if (otherParticipantId && !hasPaidMessage) {
-        const paidMessage: Message = {
-          id: 'static-paid-message',
-          senderId: otherParticipantId,
-          createdAt: Timestamp.now(),
-          isPaid: true,
-          text: '', // This won't be decrypted, it's a placeholder for locked content
-          contentTitle: 'Behind the Scenes: Project Nova',
-          contentPrice: 9.99,
-          contentImageUrl: 'https://picsum.photos/seed/project-nova/600/400',
-          contentType: 'video',
-        };
-        return [...regularMessages, paidMessage];
-      }
-    }
-    
-    return regularMessages;
-  }, [messagesData, user, selectedConversationId, conversations]);
+  }, [messagesData]);
 
   // Decrypt messages as they come in
   useEffect(() => {
