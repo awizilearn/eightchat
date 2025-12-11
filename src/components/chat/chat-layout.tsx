@@ -8,6 +8,7 @@ import { useUser, useDoc, useFirestore } from '@/firebase';
 import { useMemo } from 'react';
 import { doc } from 'firebase/firestore';
 import { Skeleton } from '../ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
 function SelectedConversationHeader({ conversation }: { conversation: Conversation }) {
@@ -28,13 +29,10 @@ function SelectedConversationHeader({ conversation }: { conversation: Conversati
 
     if (loading) {
         return (
-            <div className="p-4 border-b">
-                <div className="animate-pulse flex items-center space-x-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-[250px]" />
-                        <Skeleton className="h-4 w-[200px]" />
-                    </div>
+            <div className="p-4 border-b flex items-center gap-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-[150px]" />
                 </div>
             </div>
         );
@@ -42,7 +40,11 @@ function SelectedConversationHeader({ conversation }: { conversation: Conversati
 
     return (
         <div className="flex items-center gap-4 p-4 border-b">
-             <h2 className="text-xl font-bold">{participant?.displayName || 'Chat'}</h2>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={participant?.photoURL} alt={participant?.displayName} />
+              <AvatarFallback>{participant?.displayName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <h2 className="text-xl font-bold">{participant?.displayName || 'Chat'}</h2>
         </div>
     );
 }
@@ -79,7 +81,7 @@ export function ChatLayout({
 }: ChatLayoutProps) {
   return (
     <div className="h-full w-full flex">
-      <div className="h-full w-1/3 min-w-[300px] max-w-[400px] border-r">
+      <div className="h-full w-full max-w-xs flex-col border-r bg-sidebar md:flex">
         <ConversationList
           conversations={conversations}
           selectedConversationId={selectedConversation?.id}

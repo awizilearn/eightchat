@@ -57,7 +57,7 @@ const ConversationItem = ({
       onClick={() => onSelect(convo.id)}
       className={cn(
         'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors',
-        isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+        isSelected ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent/50'
       )}
     >
       <Avatar className="h-12 w-12 border">
@@ -66,15 +66,15 @@ const ConversationItem = ({
       </Avatar>
       <div className="flex-1 overflow-hidden">
         <div className="flex justify-between items-center">
-          <p className="font-semibold truncate">{participant?.displayName}</p>
-          <p className="text-xs text-muted-foreground whitespace-nowrap">
+          <p className={cn("font-semibold truncate", isSelected && "text-sidebar-accent-foreground")}>{participant?.displayName}</p>
+          <p className={cn("text-xs whitespace-nowrap", isSelected ? 'text-sidebar-accent-foreground/80' : 'text-muted-foreground')}>
             {convo.updatedAt && convo.updatedAt instanceof Timestamp ? formatDistanceToNow(convo.updatedAt.toDate(), {
               addSuffix: true,
               locale: fr,
             }) : ''}
           </p>
         </div>
-        <p className="text-sm text-muted-foreground truncate">{convo.lastMessage}</p>
+        <p className={cn("text-sm truncate", isSelected ? 'text-sidebar-accent-foreground/80' : 'text-muted-foreground')}>{convo.lastMessage}</p>
       </div>
     </div>
   );
@@ -95,8 +95,9 @@ export function ConversationList({
 }: ConversationListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   
+  // This is a simplified search. A real implementation would need to fetch users to search by name.
+  // For now, it only searches based on the last message content.
   const filteredConversations = useMemo(() => {
-    // This is a simplified search. A real implementation would need to fetch users to search by name.
     if (!searchTerm) return conversations;
     return conversations.filter(c => 
       c.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -104,12 +105,12 @@ export function ConversationList({
   }, [conversations, searchTerm]);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b">
+    <div className="h-full flex flex-col bg-sidebar text-sidebar-foreground">
+      <div className="p-4 border-b border-sidebar-border">
         <div className="flex justify-between items-center">
            <h2 className="text-2xl font-bold font-headline">Messages</h2>
-           <button className='p-2 rounded-full hover:bg-muted'>
-             <Users className="h-5 w-5 text-muted-foreground" />
+           <button className='p-2 rounded-full hover:bg-sidebar-accent'>
+             <Users className="h-5 w-5 text-sidebar-foreground/80" />
              <span className='sr-only'>New Conversation</span>
            </button>
         </div>
@@ -117,7 +118,7 @@ export function ConversationList({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
             placeholder="Rechercher des messages..." 
-            className="pl-10" 
+            className="pl-10 bg-background/50 border-sidebar-border focus:bg-background" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -128,13 +129,13 @@ export function ConversationList({
           {loading ? (
              [...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3">
-                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="h-12 w-12 rounded-full bg-sidebar-accent" />
                     <div className="flex-1 space-y-2">
                         <div className="flex justify-between items-center">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-3 w-16" />
+                            <Skeleton className="h-4 w-24 bg-sidebar-accent" />
+                            <Skeleton className="h-3 w-16 bg-sidebar-accent" />
                         </div>
-                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-4 w-40 bg-sidebar-accent" />
                     </div>
                 </div>
              ))
