@@ -30,6 +30,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Pour résoudre l'erreur "Module not found: Can't resolve 'fs'"
+      // Certaines dépendances de libsignal-protocol s'attendent à un environnement Node.js
+      config.resolve.fallback = {
+        fs: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
