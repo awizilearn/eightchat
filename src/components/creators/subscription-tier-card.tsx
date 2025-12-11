@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 import type { SubscriptionTier } from '@/lib/data';
-
+import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,11 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
+  DialogClose
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import React from 'react';
 
 function StripeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -39,6 +41,24 @@ function CoinbaseIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorName: string }) {
+    const { toast } = useToast();
+    const closeRef = React.useRef<HTMLButtonElement>(null);
+
+    const handlePayment = (method: 'Stripe' | 'Coinbase') => {
+        toast({
+            title: "Abonnement en cours...",
+            description: `Simulation du paiement via ${method}.`,
+        });
+
+        setTimeout(() => {
+            toast({
+                title: "Abonnement réussi !",
+                description: `Vous êtes maintenant abonné au niveau ${tier.name} de ${creatorName}.`,
+            });
+            closeRef.current?.click();
+        }, 1500);
+    };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -57,11 +77,11 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
         <div className="py-4 space-y-4">
             <p className="text-sm text-muted-foreground">Choisissez votre méthode de paiement pour finaliser l'abonnement.</p>
             <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center">
+                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center" onClick={() => handlePayment('Stripe')}>
                     <StripeIcon className="text-[#6772E5]" />
                     <span>Payer avec Stripe</span>
                 </Button>
-                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center">
+                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center" onClick={() => handlePayment('Coinbase')}>
                     <CoinbaseIcon className="text-[#0052FF]" />
                      <span>Payer avec Coinbase</span>
                 </Button>
@@ -72,6 +92,7 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
             En vous abonnant, vous acceptez nos Conditions d'utilisation.
           </p>
         </DialogFooter>
+        <DialogClose ref={closeRef} className="sr-only">Close</DialogClose>
       </DialogContent>
     </Dialog>
   )

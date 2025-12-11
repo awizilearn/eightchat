@@ -32,6 +32,7 @@ export default function ChatPage() {
   >(initialConversationId);
 
   const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
+  const [unlockedMessages, setUnlockedMessages] = useState<Set<string>>(new Set());
 
 
   const conversationsQuery = useMemoFirebase(() => {
@@ -162,7 +163,7 @@ export default function ChatPage() {
 
         await addDoc(messagesColRef, {
             senderId: user.uid,
-            text: ciphertext, // Store encrypted text (as Base64 JSON string)
+            text: ciphertext, // Store encrypted text
             createdAt: serverTimestamp(),
             isPaid: false,
         });
@@ -180,20 +181,17 @@ export default function ChatPage() {
     if (message.isPaid) {
       return message;
     }
-    // For our own messages, we don't encrypt them for local display, but they are sent encrypted.
-    // This is a UI choice. We could encrypt and then decrypt, but that's extra work.
-    if (message.senderId === user?.uid) {
-        // This part is tricky. When we send a message, it's not immediately reflected with its plaintext.
-        // For simplicity, we are not showing own messages until they come back from firestore.
-        // A better implementation would have a temporary local state for sent messages.
-    }
-
+    
     const decryptedText = decryptedMessages.get(message.id);
     return {
       ...message,
-      text: decryptedText || "Decrypting...",
+      text: decryptedText || "Déchiffrement...",
     };
-  }, [decryptedMessages, user?.uid]);
+  }, [decryptedMessages]);
+
+  const handleUnlockContent = (messageId: string) => {
+    setUnlockedMessages(prev => new Set(prev).add(messageId));
+  };
 
   const displayableMessages = useMemo(
       () => messages.map(getDisplayableMessage), 
@@ -213,6 +211,8 @@ export default function ChatPage() {
           currentUserId={user?.uid}
           conversationsLoading={conversationsLoading}
           messagesLoading={messagesLoading}
+          unlockedMessages={unlockedMessages}
+          onUnlockContent={handleUnlockContent}
         />
       </main>
     </div>

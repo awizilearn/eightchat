@@ -8,13 +8,34 @@ import { Lock, PlayCircle } from 'lucide-react';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
 
 interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
+  isContentUnlocked: boolean;
+  onUnlockContent: (messageId: string) => void;
 }
 
-function LockedContent({ message }: { message: Message }) {
+function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () => void; }) {
+    const { toast } = useToast();
+
+    const handlePurchase = () => {
+        // In a real app, this would trigger a payment flow with Stripe/Coinbase
+        toast({
+            title: "Achat en cours...",
+            description: "Simulation du processus de paiement.",
+        });
+
+        setTimeout(() => {
+            onUnlock();
+            toast({
+                title: "Achat réussi!",
+                description: `Vous avez débloqué "${message.contentTitle}".`,
+            });
+        }, 1500);
+    };
+
   return (
     <Card className="max-w-xs md:max-w-sm w-full bg-secondary/50 border-border/50">
       <CardContent className="p-0">
@@ -42,9 +63,9 @@ function LockedContent({ message }: { message: Message }) {
               ${message.contentPrice.toFixed(2)}
             </p>
           )}
-          <Button className="w-full">
+          <Button className="w-full" onClick={handlePurchase}>
             <Lock className="h-4 w-4 mr-2" />
-            Buy Now
+            Acheter maintenant
           </Button>
         </div>
       </CardContent>
@@ -52,8 +73,34 @@ function LockedContent({ message }: { message: Message }) {
   );
 }
 
+function UnlockedContent({ message }: { message: Message }) {
+    return (
+        <Card className="max-w-xs md:max-w-sm w-full bg-secondary/50 border-border/50 overflow-hidden">
+             <CardContent className="p-0">
+                <div className="relative aspect-video w-full">
+                {message.contentImageUrl && (
+                    <Image
+                    src={message.contentImageUrl}
+                    alt={message.contentTitle || 'Contenu débloqué'}
+                    fill
+                    className="object-cover"
+                    />
+                )}
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-4">
+                    <h4 className="font-bold text-white text-lg">{message.contentTitle}</h4>
+                </div>
+                </div>
+                <div className='p-4'>
+                    <p className='text-sm text-muted-foreground'>Contenu débloqué. Profitez-en !</p>
+                    <Button variant="link" className="px-0">Voir le contenu</Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
-export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
+
+export function MessageBubble({ message, isOwnMessage, isContentUnlocked, onUnlockContent }: MessageBubbleProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   // Fetch sender profile only if it's not the current user's message
@@ -72,7 +119,11 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
             <AvatarImage src={avatarUrl ?? undefined} />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
         </Avatar>
-        <LockedContent message={message} />
+        {isContentUnlocked ? (
+            <UnlockedContent message={message} />
+        ) : (
+            <LockedContent message={message} onUnlock={() => onUnlockContent(message.id)} />
+        )}
       </div>
     );
   }

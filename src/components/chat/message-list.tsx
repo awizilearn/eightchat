@@ -9,9 +9,11 @@ interface MessageListProps {
   messages: Message[];
   currentUserId?: string | null;
   loading?: boolean;
+  unlockedMessages: Set<string>;
+  onUnlockContent: (messageId: string) => void;
 }
 
-export function MessageList({ messages, currentUserId, loading }: MessageListProps) {
+export function MessageList({ messages, currentUserId, loading, unlockedMessages, onUnlockContent }: MessageListProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,6 +52,8 @@ export function MessageList({ messages, currentUserId, loading }: MessageListPro
               key={message.id}
               message={message}
               isOwnMessage={message.senderId === currentUserId}
+              isContentUnlocked={unlockedMessages.has(message.id)}
+              onUnlockContent={onUnlockContent}
             />
           ))
         )}

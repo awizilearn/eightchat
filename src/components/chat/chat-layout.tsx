@@ -54,6 +54,8 @@ interface ChatLayoutProps {
   currentUserId?: string | null;
   conversationsLoading: boolean;
   messagesLoading: boolean;
+  unlockedMessages: Set<string>;
+  onUnlockContent: (messageId: string) => void;
 }
 
 export function ChatLayout({
@@ -65,6 +67,8 @@ export function ChatLayout({
   currentUserId,
   conversationsLoading,
   messagesLoading,
+  unlockedMessages,
+  onUnlockContent,
 }: ChatLayoutProps) {
   return (
     <div className="h-full w-full flex">
@@ -81,7 +85,13 @@ export function ChatLayout({
         {selectedConversation ? (
           <>
             <SelectedConversationHeader conversation={selectedConversation} />
-            <MessageList messages={messages} currentUserId={currentUserId} loading={messagesLoading} />
+            <MessageList 
+                messages={messages} 
+                currentUserId={currentUserId} 
+                loading={messagesLoading}
+                unlockedMessages={unlockedMessages}
+                onUnlockContent={onUnlockContent}
+            />
             <div className="p-4 border-t">
               <MessageInput onSendMessage={onSendMessage} />
             </div>
