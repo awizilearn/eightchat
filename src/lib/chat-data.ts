@@ -34,9 +34,11 @@ export interface UserProfile {
 export interface Message {
   id: string;
   senderId: string;
-  // The 'text' will be the encrypted message (ciphertext).
-  // The type of ciphertext from libsignal is a string.
+  // The 'text' will be the encrypted message (ciphertext) for the recipient.
   text: string;
+  // The 'plaintext' is for the sender to read their own messages.
+  // It's secured by Firestore rules.
+  plaintext?: string;
   createdAt: Timestamp;
   isPaid?: boolean;
   contentTitle?: string;

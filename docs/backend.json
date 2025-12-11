@@ -111,7 +111,11 @@
                 },
                 "text": {
                     "type": "string",
-                    "description": "The content of the message. This may be encrypted."
+                    "description": "The encrypted content of the message for the recipient."
+                },
+                "plaintext": {
+                    "type": "string",
+                    "description": "The unencrypted content of the message, only readable by the sender."
                 },
                 "createdAt": {
                     "type": "string",
@@ -141,7 +145,7 @@
                     "description": "The type of the paid content."
                 }
             },
-            "required": ["senderId", "createdAt"]
+            "required": ["senderId", "text", "createdAt"]
         },
         "ModerationAction": {
             "title": "Moderation Action",

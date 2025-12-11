@@ -177,7 +177,8 @@ export default function ChatPage() {
 
         await addDoc(messagesColRef, {
             senderId: user.uid,
-            text: ciphertext, // Store encrypted text
+            text: ciphertext, // Store encrypted text for recipient
+            plaintext: text, // Store plaintext for sender
             createdAt: serverTimestamp(),
             isPaid: false,
         });
@@ -226,16 +227,16 @@ export default function ChatPage() {
       return message;
     }
     
-    // For own messages, we don't need to decrypt, but we also don't have the plaintext
-    // This is a limitation of the current implementation. We'll show a placeholder.
+    // For our own messages, we can now read the plaintext field directly
+    // thanks to our security rules.
     if (message.senderId === user?.uid) {
-        // A more advanced solution would be to keep the sent message in local state before sending
         return {
             ...message,
-            text: message.text.startsWith('{') ? 'Vous : Message chiffré' : message.text,
-        }
+            text: message.plaintext || 'Message envoyé',
+        };
     }
 
+    // For received messages, we decrypt.
     const decryptedText = decryptedMessages.get(message.id);
     return {
       ...message,
