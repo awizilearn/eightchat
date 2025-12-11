@@ -20,6 +20,8 @@ import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 import { useSearchParams } from 'next/navigation';
 import { encryptMessage, decryptMessage, rehydratePreKeyBundle } from '@/lib/signal-protocol';
 
+const UNLOCKED_MESSAGES_STORAGE_KEY = 'unlocked_messages';
+
 export default function ChatPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -33,6 +35,23 @@ export default function ChatPage() {
 
   const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
   const [unlockedMessages, setUnlockedMessages] = useState<Set<string>>(new Set());
+
+  // Load from localStorage only on the client
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem(UNLOCKED_MESSAGES_STORAGE_KEY);
+      if (saved) {
+        setUnlockedMessages(new Set(JSON.parse(saved)));
+      }
+    }
+  }, []);
+
+  // Save to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(UNLOCKED_MESSAGES_STORAGE_KEY, JSON.stringify(Array.from(unlockedMessages)));
+    }
+  }, [unlockedMessages]);
 
 
   const conversationsQuery = useMemoFirebase(() => {
