@@ -99,7 +99,7 @@ export default function CreatorProfilePage({
         const conversationDoc = querySnapshot.docs.find(doc => {
             const data = doc.data();
             const participants = data.participantIds as string[];
-            return participants.includes(user.uid) && participants.includes(creator.id);
+            return participants.includes(user.uid) && participants.includes(params.id);
         });
         if(conversationDoc) {
           conversationId = conversationDoc.id;
@@ -108,7 +108,7 @@ export default function CreatorProfilePage({
       
       if (!conversationId) {
         const newConversation = await addDoc(conversationsRef, {
-          participantIds: [user.uid, creator.id],
+          participantIds: [user.uid, params.id],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           lastMessage: '',

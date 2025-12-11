@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { recommendContent } from '@/ai/flows/content-recommendation';
 import { CreatorCard } from './creator-card';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { collection, query, where, documentId, getDocs } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/chat-data';
 
 export function RecommendedCreators() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const [recommendedCreators, setRecommendedCreators] = useState<UserProfile[]>([]);
+  const [recommendedCreators, setRecommendedCreators] = useState<(UserProfile & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   // In a real app, the user's subscriptions would be stored in their user profile.
@@ -34,7 +34,7 @@ export function RecommendedCreators() {
             where(documentId(), 'in', recommendations.recommendations)
           );
           const querySnapshot = await getDocs(creatorsQuery);
-          const creators = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+          const creators = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
           setRecommendedCreators(creators);
         }
       } catch (error) {

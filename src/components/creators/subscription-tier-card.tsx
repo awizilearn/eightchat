@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
-import type { SubscriptionTier } from '@/lib/data';
+import type { SubscriptionTier } from '@/lib/chat-data';
 import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,

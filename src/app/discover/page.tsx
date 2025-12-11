@@ -22,7 +22,7 @@ function AllCreators() {
 
     const creators = useMemo(() => {
         if (!creatorsData) return [];
-        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
     }, [creatorsData]);
 
     if (loading) {
