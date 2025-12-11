@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/card';
 import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -67,6 +68,7 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
+    auth.tenantId = firebaseConfig.authDomain;
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
