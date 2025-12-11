@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   orderBy,
   updateDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { type Conversation, type Message } from '@/lib/chat-data';
 import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
@@ -78,10 +79,32 @@ export default function ChatPage() {
 
   const messages: Message[] = useMemo(() => {
     if (!messagesData) return [];
-    return messagesData.docs.map(
+    const regularMessages = messagesData.docs.map(
       (doc) => ({ id: doc.id, ...doc.data() } as Message)
     );
-  }, [messagesData]);
+
+    // For demonstration, add a static paid message if it doesn't exist
+    if (user && selectedConversationId) {
+      const otherParticipantId = conversations.find(c => c.id === selectedConversationId)?.participantIds.find(id => id !== user.uid);
+      const hasPaidMessage = regularMessages.some(m => m.isPaid);
+      if (otherParticipantId && !hasPaidMessage) {
+        const paidMessage: Message = {
+          id: 'static-paid-message',
+          senderId: otherParticipantId,
+          createdAt: Timestamp.now(),
+          isPaid: true,
+          text: '',
+          contentTitle: 'Behind the Scenes: Project Nova',
+          contentPrice: 9.99,
+          contentImageUrl: 'https://picsum.photos/seed/project-nova/600/400',
+          contentType: 'video',
+        };
+        return [...regularMessages, paidMessage];
+      }
+    }
+    
+    return regularMessages;
+  }, [messagesData, user, selectedConversationId, conversations]);
 
   // 3. Get the selected conversation object
   const selectedConversation = useMemo(() => {
@@ -113,7 +136,7 @@ export default function ChatPage() {
       senderId: user.uid,
       text,
       createdAt: serverTimestamp(),
-      isPaid: false, // For now, all messages are free
+      isPaid: false,
     });
 
     await updateDoc(conversationDocRef, {

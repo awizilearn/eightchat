@@ -14,6 +14,10 @@ export interface Message {
   text: string;
   createdAt: Timestamp;
   isPaid?: boolean;
+  contentTitle?: string;
+  contentPrice?: number;
+  contentImageUrl?: string;
+  contentType?: 'video' | 'image' | 'audio' | 'text';
 }
 
 export interface Conversation {

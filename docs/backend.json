@@ -72,9 +72,27 @@
                 "isPaid": {
                     "type": "boolean",
                     "description": "True if the message content is behind a paywall."
+                },
+                "contentTitle": {
+                    "type": "string",
+                    "description": "The title of the paid content."
+                },
+                "contentPrice": {
+                    "type": "number",
+                    "description": "The price of the paid content."
+                },
+                "contentImageUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "The URL of the image for the paid content."
+                },
+                "contentType": {
+                    "type": "string",
+                    "enum": ["video", "image", "audio", "text"],
+                    "description": "The type of the paid content."
                 }
             },
-            "required": ["senderId", "text", "createdAt"]
+            "required": ["senderId", "createdAt"]
         },
         "ModerationAction": {
             "title": "Moderation Action",
