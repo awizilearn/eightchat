@@ -2,29 +2,26 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // By default, require users to be authenticated.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    
+    // Allow public read access to user profiles for discovery purposes
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // This index is required for the chat page query to work correctly.
-    // It allows filtering conversations by participantIds and ordering them by the last update time.
-    match /conversations/{conversation} {
-      // The following index is for the query in src/app/chat/page.tsx
-      // where('participantIds', 'array-contains', user.uid)
-      // orderBy('updatedAt', 'desc')
-      //
-      // You can see the indexes for your project here:
-      // https://console.firebase.google.com/project/studio-8669415397-a6d87/firestore/indexes
-      //
-      // For more information on Firestore indexes, see:
-      // https://firebase.google.com/docs/firestore/query-data/indexing
+    // Allow reads and writes to conversations if the user is a participant
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
       
-      // Note: It can take a few minutes for the index to be created after deploying these rules.
-      // During this time, queries that depend on this index might fail.
-      
-      // Allow reads and writes if the user is authenticated.
-      allow read, write: if request.auth != null;
+      // Allow reads and writes to messages if the user is a participant in the parent conversation
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+      }
+    }
+
+    // Default deny all other reads/writes
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

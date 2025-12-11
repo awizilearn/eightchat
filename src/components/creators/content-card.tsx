@@ -1,8 +1,11 @@
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Content } from '@/lib/data';
 import { Lock, Image as ImageIcon, Video, FileText } from 'lucide-react';
+import type { UserProfile } from '@/lib/chat-data';
+
+type Content = Exclude<UserProfile['content'], undefined>[number];
+
 
 const tierColors = {
   Bronze: 'bg-orange-900/80 border-orange-700/50 text-orange-300',
@@ -27,12 +30,11 @@ export function ContentCard({ content }: { content: Content }) {
   return (
     <Card className="group overflow-hidden relative border-border/50 hover:border-primary/50 transition-colors duration-300">
       <Image
-        src={content.image.imageUrl}
+        src={content.imageUrl}
         alt={content.title}
         width={600}
         height={400}
         className="object-cover w-full h-auto aspect-[3/2] transition-transform duration-300 group-hover:scale-105"
-        data-ai-hint={content.image.imageHint}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
       <div className="absolute top-2 right-2">

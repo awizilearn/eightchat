@@ -3,14 +3,13 @@
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Header } from '@/components/common/header';
-import { findCreatorById } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SubscriptionTierCard } from '@/components/creators/subscription-tier-card';
 import { ContentCard } from '@/components/creators/content-card';
 import { Separator } from '@/components/ui/separator';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import {
   collection,
   query,
@@ -18,19 +17,64 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  doc,
 } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/chat-data';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3VudGFpbnN8ZW58MHx8fHwxNzY1MzkxOTk3fDA&ixlib=rb-4.1.0&q=80&w=1080';
+
+
+function CreatorProfileSkeleton() {
+    return (
+        <>
+            <Header />
+            <main>
+                <div className="relative h-64 w-full md:h-80 bg-muted">
+                    <Skeleton className="h-full w-full" />
+                </div>
+                 <div className="container mx-auto -mt-20 px-4 pb-12">
+                    <div className="relative z-10 mb-8 flex flex-col items-center gap-6 md:flex-row md:items-end">
+                        <Skeleton className="h-32 w-32 md:h-40 md:w-40 rounded-full border-4 border-background" />
+                        <div className="flex-1 space-y-2 text-center md:text-left">
+                            <Skeleton className="h-10 w-64 mx-auto md:mx-0" />
+                            <Skeleton className="h-6 w-32 mx-auto md:mx-0" />
+                        </div>
+                        <div className="flex gap-2">
+                           <Skeleton className="h-12 w-32" />
+                           <Skeleton className="h-12 w-32" />
+                        </div>
+                    </div>
+                    <div className="space-y-2 mx-auto max-w-3xl text-center md:mx-0 md:text-left">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                    </div>
+                 </div>
+            </main>
+        </>
+    )
+}
 
 export default function CreatorProfilePage({
   params,
 }: {
   params: { id: string };
 }) {
-  const creator = findCreatorById(params.id);
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  
+  const creatorRef = doc(firestore, 'users', params.id);
+  const { data: creatorDoc, loading } = useDoc(creatorRef);
 
-  if (!creator) {
+  const creator = creatorDoc?.data() as UserProfile & { id: string } | undefined;
+
+  if (loading) {
+    return <CreatorProfileSkeleton />;
+  }
+
+  if (!creatorDoc?.exists() || !creator) {
     notFound();
   }
 
@@ -39,9 +83,6 @@ export default function CreatorProfilePage({
 
     const conversationsRef = collection(firestore, 'conversations');
 
-    // Query to find an existing conversation between the user and the creator.
-    // Firestore doesn't support querying for array equality with different orders,
-    // so we have to check for both possibilities with an 'in' query.
     const existingConversationQuery = query(
       conversationsRef,
       where('participantIds', 'in', [
@@ -55,7 +96,6 @@ export default function CreatorProfilePage({
       let conversationId: string | null = null;
 
       if (!querySnapshot.empty) {
-        // Conversation already exists, find the correct one.
         const conversationDoc = querySnapshot.docs.find(doc => {
             const data = doc.data();
             const participants = data.participantIds as string[];
@@ -67,7 +107,6 @@ export default function CreatorProfilePage({
       } 
       
       if (!conversationId) {
-        // Conversation doesn't exist, create a new one
         const newConversation = await addDoc(conversationsRef, {
           participantIds: [user.uid, creator.id],
           createdAt: serverTimestamp(),
@@ -78,12 +117,10 @@ export default function CreatorProfilePage({
       }
 
       if (conversationId) {
-        // Redirect to the chat page with the specific conversation
         router.push(`/chat?conversationId=${conversationId}`);
       }
     } catch (error) {
       console.error('Error handling conversation:', error);
-      // Optionally, show a toast or error message to the user
     }
   };
 
@@ -94,12 +131,11 @@ export default function CreatorProfilePage({
         {/* Hero Section */}
         <div className="relative h-64 w-full md:h-80">
           <Image
-            src={creator.banner.imageUrl}
-            alt={`${creator.name}'s banner`}
+            src={creator.bannerUrl || DEFAULT_BANNER}
+            alt={`${creator.displayName}'s banner`}
             fill
             className="object-cover"
             priority
-            data-ai-hint={creator.banner.imageHint}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         </div>
@@ -109,15 +145,14 @@ export default function CreatorProfilePage({
           <div className="relative z-10 mb-8 flex flex-col items-center gap-6 md:flex-row md:items-end">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg md:h-40 md:w-40">
               <AvatarImage
-                src={creator.avatar.imageUrl}
-                alt={creator.name}
-                data-ai-hint={creator.avatar.imageHint}
+                src={creator.photoURL}
+                alt={creator.displayName}
               />
-              <AvatarFallback>{creator.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{creator.displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 text-center md:text-left">
               <h1 className="font-headline text-4xl font-bold md:text-5xl">
-                {creator.name}
+                {creator.displayName}
               </h1>
               <p className="text-lg text-muted-foreground">{creator.category}</p>
             </div>
@@ -147,34 +182,38 @@ export default function CreatorProfilePage({
           <Separator className="my-12 bg-border/50" />
 
           {/* Subscription Tiers */}
-          <section className="mb-16">
-            <h2 className="text-center font-headline text-3xl font-bold mb-8">
-              Join the <span className="text-primary">{creator.name}'s Enclave</span>
-            </h2>
-            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
-              {creator.tiers.map((tier) => (
-                <SubscriptionTierCard
-                  key={tier.name}
-                  tier={tier}
-                  creatorName={creator.name}
-                />
-              ))}
-            </div>
-          </section>
+          {creator.tiers && creator.tiers.length > 0 && (
+            <section className="mb-16">
+                <h2 className="text-center font-headline text-3xl font-bold mb-8">
+                Join the <span className="text-primary">{creator.displayName}'s Enclave</span>
+                </h2>
+                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+                {creator.tiers.map((tier) => (
+                    <SubscriptionTierCard
+                    key={tier.name}
+                    tier={tier}
+                    creatorName={creator.displayName}
+                    />
+                ))}
+                </div>
+            </section>
+          )}
 
           <Separator className="my-12 bg-border/50" />
 
           {/* Content Grid */}
-          <section>
-            <h2 className="font-headline text-3xl font-bold mb-8">
-              Exclusive Content
-            </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {creator.content.map((item) => (
-                <ContentCard key={item.id} content={item} />
-              ))}
-            </div>
-          </section>
+          {creator.content && creator.content.length > 0 && (
+            <section>
+                <h2 className="font-headline text-3xl font-bold mb-8">
+                Exclusive Content
+                </h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {creator.content.map((item) => (
+                    <ContentCard key={item.id} content={item} />
+                ))}
+                </div>
+            </section>
+          )}
         </div>
       </main>
       <footer className="border-t py-8 text-center text-muted-foreground">

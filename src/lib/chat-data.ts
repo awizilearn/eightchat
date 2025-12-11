@@ -1,12 +1,33 @@
 import { Timestamp } from "firebase/firestore";
 
+export interface SubscriptionTier {
+  name: 'Bronze' | 'Silver' | 'Gold';
+  price: number;
+  perks: string[];
+  cta: string;
+}
+
+export interface Content {
+    id: string;
+    title: string;
+    type: 'image' | 'video' | 'article';
+    imageUrl: string;
+    tier: 'Bronze' | 'Silver' | 'Gold';
+}
+
 export interface UserProfile {
+  id: string;
   displayName: string;
   photoURL: string;
   email: string;
-  role: string;
-  // This will be a serialized PreKeyBundle.
+  role: 'admin' | 'abonne' | 'createur' | 'moderateur' | 'agence';
   signalPreKeyBundle: object;
+  bio?: string;
+  longBio?: string;
+  category?: string;
+  bannerUrl?: string;
+  tiers?: SubscriptionTier[];
+  content?: Content[];
 }
 
 

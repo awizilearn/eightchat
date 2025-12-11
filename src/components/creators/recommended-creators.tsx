@@ -3,36 +3,49 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { recommendContent } from '@/ai/flows/content-recommendation';
-import { user, findCreatorsById, type Creator } from '@/lib/data';
 import { CreatorCard } from './creator-card';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, documentId, getDocs } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/chat-data';
 
 export function RecommendedCreators() {
-  const [recommendedCreators, setRecommendedCreators] = useState<Creator[]>([]);
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const [recommendedCreators, setRecommendedCreators] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // In a real app, the user's subscriptions would be stored in their user profile.
+  // For now, we'll hardcode them for the recommendation engine.
+  const hardcodedSubscriptions = ['elena-moreau', 'isabella-rossi'];
 
   useEffect(() => {
     const fetchRecommendations = async () => {
+      if (!firestore) return;
       try {
         setLoading(true);
         const recommendations = await recommendContent({
-          userId: 'current-user', // In a real app, this would come from the auth context
-          subscriptionHistory: user.subscriptions,
+          userId: user?.uid || 'anonymous',
+          subscriptionHistory: hardcodedSubscriptions,
         });
 
-        if (recommendations.recommendations) {
-          const creators = findCreatorsByIds(recommendations.recommendations);
+        if (recommendations.recommendations && recommendations.recommendations.length > 0) {
+          const creatorsQuery = query(
+            collection(firestore, 'users'),
+            where(documentId(), 'in', recommendations.recommendations)
+          );
+          const querySnapshot = await getDocs(creatorsQuery);
+          const creators = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
           setRecommendedCreators(creators);
         }
       } catch (error) {
         console.error('Error fetching recommendations:', error);
-        // Optionally, handle the error in the UI
       } finally {
         setLoading(false);
       }
     };
 
     fetchRecommendations();
-  }, []);
+  }, [firestore, user]);
 
   return (
     <section>

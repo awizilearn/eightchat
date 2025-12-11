@@ -1,24 +1,24 @@
+'use client';
+
 import { Header } from '@/components/common/header';
-import { CreatorCard } from '@/components/creators/creator-card';
-import { creators } from '@/lib/data';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to discover page as the main authenticated view
+    router.replace('/discover');
+  }, [router]);
+
   return (
     <>
       <Header />
       <main className="container mx-auto py-8 px-4">
-        <section>
-           <div className="flex justify-between items-center mb-6">
-            <h2 className="font-headline text-3xl font-bold">
-              Discover Creators
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {creators.map((creator) => (
-              <CreatorCard key={creator.id} creator={creator} />
-            ))}
-          </div>
-        </section>
+        <div className="flex h-64 items-center justify-center">
+            <p className="text-muted-foreground">Loading...</p>
+        </div>
       </main>
       <footer className="py-8 mt-16 text-center text-muted-foreground border-t">
          <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>

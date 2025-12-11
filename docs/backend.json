@@ -27,6 +27,51 @@
                 "signalPreKeyBundle": {
                     "type": "object",
                     "description": "The user's public pre-key bundle for the Signal Protocol."
+                },
+                "bio": {
+                    "type": "string",
+                    "description": "A short bio for the creator."
+                },
+                "longBio": {
+                    "type": "string",
+                    "description": "A longer biography for the creator's profile page."
+                },
+                "category": {
+                    "type": "string",
+                    "description": "The category of the creator's content (e.g., Haute Couture, Culinary Arts)."
+                },
+                "bannerUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL for the creator's profile banner image."
+                },
+                "tiers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string", "enum": ["Bronze", "Silver", "Gold"] },
+                            "price": { "type": "number" },
+                            "perks": { "type": "array", "items": { "type": "string" } },
+                            "cta": { "type": "string" }
+                        },
+                        "required": ["name", "price", "perks", "cta"]
+                    },
+                    "description": "The subscription tiers offered by the creator."
+                },
+                "content": {
+                     "type": "array",
+                     "items": {
+                         "type": "object",
+                         "properties": {
+                            "id": { "type": "string" },
+                            "title": { "type": "string" },
+                            "type": { "type": "string", "enum": ["image", "video", "article"] },
+                            "imageUrl": { "type": "string", "format": "uri" },
+                            "tier": { "type": "string", "enum": ["Bronze", "Silver", "Gold"] }
+                         },
+                         "required": ["id", "title", "type", "imageUrl", "tier"]
+                     }
                 }
             },
             "required": ["displayName", "email", "role", "signalPreKeyBundle"]
