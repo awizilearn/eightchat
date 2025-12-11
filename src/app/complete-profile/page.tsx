@@ -21,6 +21,8 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Crown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { generateSignalKeys } from '@/lib/signal-protocol';
+
 
 const availableRoles = [
   { value: 'abonne', label: 'Abonné' },
@@ -54,19 +56,23 @@ export default function CompleteProfilePage() {
 
   const handleSubmit = async () => {
     if (!user || !selectedRole) {
-      // Maybe show a toast or an error message
       return;
     }
     setIsSubmitting(true);
     const userDocRef = doc(firestore, 'users', user.uid);
 
     try {
+      // Generate Signal Protocol keys and public bundle
+      const { serializedPreKeyBundle } = await generateSignalKeys(user.uid);
+      
       await setDoc(userDocRef, {
         displayName: user.displayName,
         email: user.email,
         photoURL: user.photoURL,
         role: selectedRole,
+        signalPreKeyBundle: serializedPreKeyBundle,
       });
+
       router.push('/');
     } catch (error) {
       console.error('Error creating user profile:', error);
@@ -91,7 +97,7 @@ export default function CompleteProfilePage() {
         <CardHeader>
           <CardTitle className="text-2xl">Finaliser votre profil</CardTitle>
           <CardDescription>
-            Choisissez votre rôle pour commencer.
+            Choisissez votre rôle et sécurisez votre compte pour commencer.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -115,7 +121,7 @@ export default function CompleteProfilePage() {
             onClick={handleSubmit}
             disabled={!selectedRole || isSubmitting}
           >
-            {isSubmitting ? 'Sauvegarde...' : 'Terminer'}
+            {isSubmitting ? 'Sécurisation...' : 'Terminer et chiffrer'}
           </Button>
         </CardContent>
       </Card>

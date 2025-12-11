@@ -5,12 +5,16 @@ export interface UserProfile {
   photoURL: string;
   email: string;
   role: string;
+  // This will be a serialized PreKeyBundle.
+  signalPreKeyBundle: object;
 }
 
 
 export interface Message {
   id: string;
   senderId: string;
+  // The 'text' will be the encrypted message (ciphertext).
+  // The type of ciphertext from libsignal is a string.
   text: string;
   createdAt: Timestamp;
   isPaid?: boolean;

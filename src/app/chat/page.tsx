@@ -1,6 +1,6 @@
 'use client';
-import { useMemo, useState, useEffect } from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { Header } from '@/components/common/header';
 import { ChatLayout } from '@/components/chat/chat-layout';
 import {
@@ -13,10 +13,12 @@ import {
   orderBy,
   updateDoc,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
-import { type Conversation, type Message } from '@/lib/chat-data';
+import { type Conversation, type Message, type UserProfile } from '@/lib/chat-data';
 import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 import { useSearchParams } from 'next/navigation';
+import { encryptMessage, decryptMessage, rehydratePreKeyBundle } from '@/lib/signal-protocol';
 
 export default function ChatPage() {
   const { user } = useUser();
@@ -29,7 +31,9 @@ export default function ChatPage() {
     string | null
   >(initialConversationId);
 
-  // 1. Fetch conversations for the current user
+  const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
+
+
   const conversationsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
@@ -49,18 +53,15 @@ export default function ChatPage() {
     );
   }, [conversationsData]);
   
-  // Effect to handle initial conversation selection from URL
   useEffect(() => {
      if (initialConversationId) {
        setSelectedConversationId(initialConversationId);
      } else if (!selectedConversationId && conversations.length > 0) {
-       // If no conversation is selected, select the first one.
        setSelectedConversationId(conversations[0].id);
      }
   }, [initialConversationId, conversations, selectedConversationId]);
 
 
-  // 2. Fetch messages for the selected conversation
   const messagesQuery = useMemoFirebase(() => {
     if (!selectedConversationId || !firestore) return null;
     return query(
@@ -83,7 +84,6 @@ export default function ChatPage() {
       (doc) => ({ id: doc.id, ...doc.data() } as Message)
     );
 
-    // For demonstration, add a static paid message if it doesn't exist
     if (user && selectedConversationId) {
       const otherParticipantId = conversations.find(c => c.id === selectedConversationId)?.participantIds.find(id => id !== user.uid);
       const hasPaidMessage = regularMessages.some(m => m.isPaid);
@@ -93,7 +93,7 @@ export default function ChatPage() {
           senderId: otherParticipantId,
           createdAt: Timestamp.now(),
           isPaid: true,
-          text: '',
+          text: '', // This won't be decrypted, it's a placeholder for locked content
           contentTitle: 'Behind the Scenes: Project Nova',
           contentPrice: 9.99,
           contentImageUrl: 'https://picsum.photos/seed/project-nova/600/400',
@@ -106,7 +106,25 @@ export default function ChatPage() {
     return regularMessages;
   }, [messagesData, user, selectedConversationId, conversations]);
 
-  // 3. Get the selected conversation object
+  // Decrypt messages as they come in
+  useEffect(() => {
+    if (!user) return;
+    messages.forEach(async (msg) => {
+      // Don't decrypt own messages, paid content placeholders, or already decrypted messages
+      if (msg.senderId === user.uid || msg.isPaid || decryptedMessages.has(msg.id)) {
+        return;
+      }
+      try {
+        const plaintext = await decryptMessage(msg.senderId, msg.text);
+        setDecryptedMessages(prev => new Map(prev).set(msg.id, plaintext));
+      } catch (error) {
+        console.error('Failed to decrypt message:', msg.id, error);
+        setDecryptedMessages(prev => new Map(prev).set(msg.id, '⚠️ Failed to decrypt'));
+      }
+    });
+  }, [messages, user, decryptedMessages]);
+
+
   const selectedConversation = useMemo(() => {
     if (!selectedConversationId) return null;
     return conversations.find((c) => c.id === selectedConversationId);
@@ -116,34 +134,64 @@ export default function ChatPage() {
     setSelectedConversationId(conversationId);
   };
 
-  // 4. Handle sending a message
   const handleSendMessage = async (text: string) => {
-    if (!user || !selectedConversationId || !firestore) return;
+    if (!user || !selectedConversationId || !firestore || !selectedConversation) return;
 
-    const messagesColRef = collection(
-      firestore,
-      'conversations',
-      selectedConversationId,
-      'messages'
-    );
-    const conversationDocRef = doc(
-      firestore,
-      'conversations',
-      selectedConversationId
-    );
+    const otherParticipantId = selectedConversation.participantIds.find(id => id !== user.uid);
+    if (!otherParticipantId) {
+      console.error("Could not find the other participant.");
+      return;
+    }
+    
+    // Fetch recipient's pre-key bundle from Firestore
+    const recipientDocRef = doc(firestore, 'users', otherParticipantId);
+    const recipientDocSnap = await getDoc(recipientDocRef);
+    if (!recipientDocSnap.exists() || !recipientDocSnap.data().signalPreKeyBundle) {
+        console.error("Recipient does not have a pre-key bundle.");
+        return;
+    }
 
-    await addDoc(messagesColRef, {
-      senderId: user.uid,
-      text,
-      createdAt: serverTimestamp(),
-      isPaid: false,
-    });
+    const recipientProfile = recipientDocSnap.data() as UserProfile;
+    const rehydratedBundle = rehydratePreKeyBundle(recipientProfile.signalPreKeyBundle);
+    
+    try {
+        const ciphertext = await encryptMessage(otherParticipantId, rehydratedBundle, text);
+        
+        const messagesColRef = collection(firestore, 'conversations', selectedConversationId, 'messages');
+        const conversationDocRef = doc(firestore, 'conversations', selectedConversationId);
 
-    await updateDoc(conversationDocRef, {
-      lastMessage: text,
-      updatedAt: serverTimestamp(),
-    });
+        await addDoc(messagesColRef, {
+            senderId: user.uid,
+            text: ciphertext, // Store encrypted text
+            createdAt: serverTimestamp(),
+            isPaid: false,
+        });
+
+        await updateDoc(conversationDocRef, {
+            lastMessage: 'Encrypted message', // Don't reveal content in conversation preview
+            updatedAt: serverTimestamp(),
+        });
+    } catch (error) {
+        console.error("Error encrypting or sending message:", error);
+    }
   };
+
+  const getDisplayableMessage = useCallback((message: Message): Message => {
+    if (message.isPaid) {
+      return message;
+    }
+    // For sent messages, we know the plaintext
+    const decryptedText = decryptedMessages.get(message.id);
+    return {
+      ...message,
+      text: decryptedText || "Decrypting...",
+    };
+  }, [decryptedMessages]);
+
+  const displayableMessages = useMemo(
+      () => messages.map(getDisplayableMessage), 
+      [messages, getDisplayableMessage]
+  );
 
   return (
     <div className="flex h-screen flex-col">
@@ -152,7 +200,7 @@ export default function ChatPage() {
         <ChatLayout
           conversations={conversations}
           selectedConversation={selectedConversation}
-          messages={messages}
+          messages={displayableMessages}
           onSelectConversation={handleSelectConversation}
           onSendMessage={handleSendMessage}
           currentUserId={user?.uid}

@@ -23,9 +23,13 @@
                     "type": "string",
                     "description": "The user's role in the application.",
                     "enum": ["admin", "abonne", "createur", "moderateur", "agence"]
+                },
+                "signalPreKeyBundle": {
+                    "type": "object",
+                    "description": "The user's public pre-key bundle for the Signal Protocol."
                 }
             },
-            "required": ["displayName", "email", "role"]
+            "required": ["displayName", "email", "role", "signalPreKeyBundle"]
         },
         "Conversation": {
             "title": "Conversation",
@@ -62,7 +66,7 @@
                 },
                 "text": {
                     "type": "string",
-                    "description": "The content of the message."
+                    "description": "The content of the message. This may be encrypted."
                 },
                 "createdAt": {
                     "type": "string",
