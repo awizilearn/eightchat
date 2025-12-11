@@ -43,7 +43,14 @@ function CoinbaseIcon(props: React.SVGProps<SVGSVGElement>) {
     )
 }
 
-function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorName: string }) {
+interface PaymentDialogProps {
+    tier: SubscriptionTier;
+    creatorName: string;
+    creatorId: string;
+    disabled?: boolean;
+}
+
+function PaymentDialog({ tier, creatorName, creatorId, disabled }: PaymentDialogProps) {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
@@ -60,6 +67,7 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
 
         const checkoutInput = {
             userId: user.uid,
+            creatorId,
             itemId: tier.name,
             amount: tier.price,
             itemName: `Abonnement ${tier.name} à ${creatorName}`,
@@ -92,7 +100,11 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full" variant={tier.name === 'Gold' ? 'default' : 'secondary'}>
+        <Button 
+            className="w-full" 
+            variant={tier.name === 'Gold' ? 'default' : 'secondary'}
+            disabled={disabled}
+        >
           {tier.cta}
         </Button>
       </DialogTrigger>
@@ -128,11 +140,19 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
   )
 }
 
-export function SubscriptionTierCard({ tier, creatorName }: { tier: SubscriptionTier; creatorName: string }) {
+interface SubscriptionTierCardProps {
+    tier: SubscriptionTier;
+    creatorName: string;
+    creatorId: string;
+    id?: string;
+    disabled?: boolean;
+}
+
+export function SubscriptionTierCard({ tier, creatorName, creatorId, id, disabled }: SubscriptionTierCardProps) {
   const isGold = tier.name === 'Gold';
   
   return (
-    <Card className={`flex flex-col ${isGold ? 'border-primary shadow-lg shadow-primary/10' : ''}`}>
+    <Card id={id} className={`flex flex-col ${isGold ? 'border-primary shadow-lg shadow-primary/10' : ''}`}>
       <CardHeader className="pb-4">
         <div className="flex justify-between items-center">
           <CardTitle className={`font-headline text-2xl ${isGold ? 'text-primary' : ''}`}>{tier.name}</CardTitle>
@@ -154,7 +174,7 @@ export function SubscriptionTierCard({ tier, creatorName }: { tier: Subscription
         </ul>
       </CardContent>
       <CardFooter>
-        <PaymentDialog tier={tier} creatorName={creatorName} />
+        <PaymentDialog tier={tier} creatorName={creatorName} creatorId={creatorId} disabled={disabled} />
       </CardFooter>
     </Card>
   );

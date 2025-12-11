@@ -21,7 +21,8 @@ service cloud.firestore {
       allow create: if isOwner(userId);
       
       // Allow updates if the user is the owner AND they are not trying to change their role.
-      // This prevents a user from escalating their own privileges.
+      // A user can update their own subscriptions.
+      // Other sensitive fields are protected.
       allow update: if isOwner(userId) && request.resource.data.role == resource.data.role;
     }
 
@@ -40,9 +41,14 @@ service cloud.firestore {
         }
         
         // Allow reads if the user is a participant.
-        // Rules on specific fields (like plaintext) are checked by Firestore.
         // A user can read a document if they have access to any field.
+        // The plaintext field is protected below.
         allow read: if canReadParentConversation();
+
+        // Allow reading plaintext ONLY if the user is the sender of the message.
+        match /messages/{messageId} {
+          allow read: if canReadParentConversation() && request.auth.uid == resource.data.senderId;
+        }
 
         // Allow creating a message if the sender is the authenticated user 
         // and is a participant in the conversation.

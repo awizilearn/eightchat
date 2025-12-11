@@ -72,6 +72,11 @@
                          },
                          "required": ["id", "title", "type", "imageUrl", "tier"]
                      }
+                },
+                "subscriptions": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "A list of creator IDs the user is subscribed to."
                 }
             },
             "required": ["displayName", "email", "role", "signalPreKeyBundle"]

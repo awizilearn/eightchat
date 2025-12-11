@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const CheckoutSchema = z.object({
   userId: z.string(),
+  creatorId: z.string(),
   // Can be a tier name like 'Gold' or a specific content ID
   itemId: z.string(),
   amount: z.number().positive(),
@@ -29,6 +30,7 @@ export async function createStripeCheckoutSession(input: CheckoutInput) {
   if (!validation.success) {
     return { success: false, error: 'Invalid input.', redirectUrl: null };
   }
+  const { creatorId, itemId } = validation.data;
 
   console.log('Simulating Stripe checkout session creation for:', input);
   
@@ -39,7 +41,8 @@ export async function createStripeCheckoutSession(input: CheckoutInput) {
     success: true,
     error: null,
     // In a real app, this would be the Stripe checkout URL
-    redirectUrl: `/payment/success?session_id=fake_stripe_session_${Date.now()}&method=stripe`,
+    // We pass the creatorId and tier (itemId) to the success page to update the subscription
+    redirectUrl: `/payment/success?session_id=fake_stripe_session_${Date.now()}&method=stripe&creatorId=${creatorId}&tier=${itemId}`,
   };
 }
 
@@ -59,6 +62,7 @@ export async function createCoinbaseCharge(input: CheckoutInput) {
     if (!validation.success) {
       return { success: false, error: 'Invalid input.', redirectUrl: null };
     }
+    const { creatorId, itemId } = validation.data;
   
     console.log('Simulating Coinbase Commerce charge creation for:', input);
 
@@ -69,6 +73,7 @@ export async function createCoinbaseCharge(input: CheckoutInput) {
       success: true,
       error: null,
       // In a real app, this would be the Coinbase Commerce charge URL
-      redirectUrl: `/payment/success?charge_id=fake_coinbase_charge_${Date.now()}&method=coinbase`,
+      // We pass the creatorId and tier (itemId) to the success page to update the subscription
+      redirectUrl: `/payment/success?charge_id=fake_coinbase_charge_${Date.now()}&method=coinbase&creatorId=${creatorId}&tier=${itemId}`,
     };
 }

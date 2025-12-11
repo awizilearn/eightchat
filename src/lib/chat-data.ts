@@ -28,6 +28,7 @@ export interface UserProfile {
   bannerUrl?: string;
   tiers?: SubscriptionTier[];
   content?: Content[];
+  subscriptions?: string[];
 }
 
 
