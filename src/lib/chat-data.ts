@@ -53,3 +53,13 @@ export interface Conversation {
   lastMessage: string;
   updatedAt: Timestamp;
 }
+
+export interface ModerationAction {
+  actionType: "contentApproved" | "userBanned" | "warningIssued" | "contentRejected" | "userMuted";
+  targetType: "user" | "post";
+  targetId: string;
+  moderatorId: string;
+  timestamp: Timestamp;
+  reason?: string;
+  duration?: number; // Duration in hours, if applicable
+}
