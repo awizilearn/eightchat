@@ -39,7 +39,9 @@ export default function CreatorProfilePage({
 
     const conversationsRef = collection(firestore, 'conversations');
 
-    // Query to find an existing conversation between the user and the creator
+    // Query to find an existing conversation between the user and the creator.
+    // Firestore doesn't support querying for array equality with different orders,
+    // so we have to check for both possibilities with an 'in' query.
     const existingConversationQuery = query(
       conversationsRef,
       where('participantIds', 'in', [
@@ -53,9 +55,18 @@ export default function CreatorProfilePage({
       let conversationId: string | null = null;
 
       if (!querySnapshot.empty) {
-        // Conversation already exists
-        conversationId = querySnapshot.docs[0].id;
-      } else {
+        // Conversation already exists, find the correct one.
+        const conversationDoc = querySnapshot.docs.find(doc => {
+            const data = doc.data();
+            const participants = data.participantIds as string[];
+            return participants.includes(user.uid) && participants.includes(creator.id);
+        });
+        if(conversationDoc) {
+          conversationId = conversationDoc.id;
+        }
+      } 
+      
+      if (!conversationId) {
         // Conversation doesn't exist, create a new one
         const newConversation = await addDoc(conversationsRef, {
           participantIds: [user.uid, creator.id],
