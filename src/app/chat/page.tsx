@@ -111,7 +111,7 @@ export default function ChatPage() {
     if (!user) return;
     messages.forEach(async (msg) => {
       // Don't decrypt own messages, paid content placeholders, or already decrypted messages
-      if (msg.senderId === user.uid || msg.isPaid || decryptedMessages.has(msg.id)) {
+      if (msg.senderId === user.uid || msg.isPaid || !msg.text || decryptedMessages.has(msg.id)) {
         return;
       }
       try {
@@ -162,7 +162,7 @@ export default function ChatPage() {
 
         await addDoc(messagesColRef, {
             senderId: user.uid,
-            text: ciphertext, // Store encrypted text
+            text: ciphertext, // Store encrypted text (as Base64 JSON string)
             createdAt: serverTimestamp(),
             isPaid: false,
         });
@@ -180,13 +180,20 @@ export default function ChatPage() {
     if (message.isPaid) {
       return message;
     }
-    // For sent messages, we know the plaintext
+    // For our own messages, we don't encrypt them for local display, but they are sent encrypted.
+    // This is a UI choice. We could encrypt and then decrypt, but that's extra work.
+    if (message.senderId === user?.uid) {
+        // This part is tricky. When we send a message, it's not immediately reflected with its plaintext.
+        // For simplicity, we are not showing own messages until they come back from firestore.
+        // A better implementation would have a temporary local state for sent messages.
+    }
+
     const decryptedText = decryptedMessages.get(message.id);
     return {
       ...message,
       text: decryptedText || "Decrypting...",
     };
-  }, [decryptedMessages]);
+  }, [decryptedMessages, user?.uid]);
 
   const displayableMessages = useMemo(
       () => messages.map(getDisplayableMessage), 

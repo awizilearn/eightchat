@@ -7,7 +7,7 @@ import {
   SessionCipher,
   PreKeyBundle,
   SignalProtocolAddress,
-} from '@signal-protocol/libsignal-protocol-typescript';
+} from '@privacyresearch/libsignal-protocol-typescript';
 
 // In-memory store for demonstration purposes.
 // In a real app, you would use IndexedDB for persistence.
@@ -18,7 +18,12 @@ class SignalProtocolStoreImpl implements SignalProtocolStore {
     if (typeof window !== 'undefined') {
         const stored = window.localStorage.getItem('signal-store');
         if (stored) {
-            this.store = JSON.parse(stored);
+            this.store = JSON.parse(stored, (key, value) => {
+              if (typeof value === 'object' && value !== null && value.type === 'Buffer') {
+                return Buffer.from(value.data);
+              }
+              return value;
+            });
         }
     }
   }
@@ -151,32 +156,62 @@ async function getSessionCipher(recipientId: string, preKeyBundle: any): Promise
     return new SessionCipher(store, address);
 }
 
+// Helper to convert ArrayBuffer to Base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+// Helper to convert Base64 to ArrayBuffer
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binary_string = window.atob(base64);
+    const len = binary_string.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
 export async function encryptMessage(recipientId: string, recipientPreKeyBundle: any, message: string): Promise<string> {
     const cipher = await getSessionCipher(recipientId, recipientPreKeyBundle);
-    const ciphertext = await cipher.encrypt(Buffer.from(message));
-    // type 3 is PreKeyWhisperMessage
-    if (ciphertext.type === 3) {
-      return JSON.stringify({ ...ciphertext, type: 3 });
-    }
-    // type 1 is WhisperMessage
-    return JSON.stringify({ ...ciphertext, type: 1 });
+    const messageBuffer = new TextEncoder().encode(message);
+    const ciphertext = await cipher.encrypt(messageBuffer);
+
+    // We'll store the type and the body (which is an ArrayBuffer)
+    // The body needs to be converted to something that can be JSON.stringified, like Base64
+    const storableCiphertext = {
+        type: ciphertext.type,
+        body: arrayBufferToBase64(ciphertext.body),
+    };
+
+    return JSON.stringify(storableCiphertext);
 }
+
 
 export async function decryptMessage(senderId: string, ciphertext: string): Promise<string> {
     const store = getStore();
     const address = new SignalProtocolAddress(senderId, 1);
     const cipher = new SessionCipher(store, address);
-
+    
     const parsedCiphertext = JSON.parse(ciphertext);
+    const bodyBuffer = base64ToArrayBuffer(parsedCiphertext.body);
+    
+    let plaintextBuffer;
 
-    let plaintext;
     if (parsedCiphertext.type === 3) { // PreKeyWhisperMessage
-        plaintext = await cipher.decryptPreKeyWhisperMessage(parsedCiphertext.body, 'binary');
+        plaintextBuffer = await cipher.decryptPreKeyWhisperMessage(bodyBuffer);
     } else { // WhisperMessage
-        plaintext = await cipher.decryptWhisperMessage(parsedCiphertext.body, 'binary');
+        plaintextBuffer = await cipher.decryptWhisperMessage(bodyBuffer);
     }
-    return Buffer.from(plaintext).toString();
+    return new TextDecoder().decode(new Uint8Array(plaintextBuffer));
 }
+
 
 // Utility to rehydrate ArrayBuffers from serialized JSON data
 export function rehydratePreKeyBundle(bundle: any): PreKeyBundle {
