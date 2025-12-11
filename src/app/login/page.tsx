@@ -68,7 +68,6 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
-    auth.tenantId = firebaseConfig.authDomain;
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
