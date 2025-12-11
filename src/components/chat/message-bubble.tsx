@@ -88,9 +88,12 @@ function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () =
   );
 }
 
-function UnlockedContent({ message }: { message: Message }) {
+function UnlockedContent({ message, isOwnMessage = false }: { message: Message; isOwnMessage?: boolean }) {
     return (
-        <Card className="max-w-xs md:max-w-sm w-full bg-secondary/50 border-border/50 overflow-hidden">
+        <Card className={cn(
+            "max-w-xs md:max-w-sm w-full overflow-hidden",
+            isOwnMessage ? "bg-primary/10 border-primary/20" : "bg-secondary/50 border-border/50"
+        )}>
              <CardContent className="p-0">
                 <div className="relative aspect-video w-full">
                 {message.contentImageUrl && (
@@ -106,7 +109,9 @@ function UnlockedContent({ message }: { message: Message }) {
                 </div>
                 </div>
                 <div className='p-4'>
-                    <p className='text-sm text-muted-foreground'>Contenu débloqué. Profitez-en !</p>
+                    <p className='text-sm text-muted-foreground'>
+                        {isOwnMessage ? "Vous avez envoyé ce contenu payant." : "Contenu débloqué. Profitez-en !"}
+                    </p>
                     <Button variant="link" className="px-0">Voir le contenu</Button>
                 </div>
             </CardContent>
@@ -127,9 +132,19 @@ export function MessageBubble({ message, isOwnMessage, isContentUnlocked, onUnlo
   const avatarFallback = isOwnMessage ? user?.displayName?.charAt(0) : sender?.displayName?.charAt(0) || '?';
 
 
-  if (message.isPaid && !isOwnMessage) {
+  if (message.isPaid) {
+    const commonContainerClasses = "flex items-end gap-3";
+    
+    if (isOwnMessage) {
+        return (
+            <div className={cn(commonContainerClasses, 'flex-row-reverse')}>
+                <UnlockedContent message={message} isOwnMessage={true} />
+            </div>
+        );
+    }
+
     return (
-       <div className="flex items-end gap-3">
+       <div className={cn(commonContainerClasses)}>
          <Avatar className="h-8 w-8">
             <AvatarImage src={avatarUrl ?? undefined} />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
