@@ -9,6 +9,9 @@ import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { createStripeCheckoutSession } from '@/app/actions/payments';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface MessageBubbleProps {
   message: Message;
@@ -19,21 +22,48 @@ interface MessageBubbleProps {
 
 function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () => void; }) {
     const { toast } = useToast();
+    const { user } = useUser();
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handlePurchase = () => {
-        // In a real app, this would trigger a payment flow with Stripe/Coinbase
-        toast({
-            title: "Achat en cours...",
-            description: "Simulation du processus de paiement.",
+    const handlePurchase = async () => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Vous devez être connecté pour acheter du contenu." });
+            return;
+        }
+
+        if (!message.contentPrice || !message.contentTitle) {
+            toast({ variant: 'destructive', title: "Information sur le contenu manquante." });
+            return;
+        }
+        
+        setIsLoading(true);
+        toast({ title: "Initiation de l'achat..." });
+
+        const result = await createStripeCheckoutSession({
+            userId: user.uid,
+            itemId: message.id,
+            amount: message.contentPrice,
+            itemName: message.contentTitle,
         });
 
-        setTimeout(() => {
-            onUnlock();
-            toast({
-                title: "Achat réussi!",
-                description: `Vous avez débloqué "${message.contentTitle}".`,
+        setIsLoading(false);
+
+        if (result.success) {
+             // In a real app, we'd redirect to Stripe. Here, we simulate success.
+             console.log("Stripe session created (simulation):", result.redirectUrl);
+             onUnlock();
+             toast({
+                 title: "Achat réussi!",
+                 description: `Vous avez débloqué "${message.contentTitle}".`,
+             });
+        } else {
+             toast({
+                variant: "destructive",
+                title: "Échec de l'achat",
+                description: result.error || "Une erreur est survenue.",
             });
-        }, 1500);
+        }
     };
 
   return (
@@ -63,9 +93,9 @@ function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () =
               ${message.contentPrice.toFixed(2)}
             </p>
           )}
-          <Button className="w-full" onClick={handlePurchase}>
+          <Button className="w-full" onClick={handlePurchase} disabled={isLoading}>
             <Lock className="h-4 w-4 mr-2" />
-            Acheter maintenant
+            {isLoading ? "Traitement..." : "Acheter maintenant"}
           </Button>
         </div>
       </CardContent>

@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import React from 'react';
+import React, { useState } from 'react';
+import { createStripeCheckoutSession, createCoinbaseCharge } from '@/app/actions/payments';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
 
 function StripeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -42,21 +45,48 @@ function CoinbaseIcon(props: React.SVGProps<SVGSVGElement>) {
 
 function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorName: string }) {
     const { toast } = useToast();
+    const router = useRouter();
+    const { user } = useUser();
+    const [isLoading, setIsLoading] = useState<null | 'stripe' | 'coinbase'>(null);
     const closeRef = React.useRef<HTMLButtonElement>(null);
 
-    const handlePayment = (method: 'Stripe' | 'Coinbase') => {
-        toast({
-            title: "Abonnement en cours...",
-            description: `Simulation du paiement via ${method}.`,
-        });
+    const handlePayment = async (method: 'stripe' | 'coinbase') => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Vous devez être connecté pour vous abonner." });
+            return;
+        }
+        setIsLoading(method);
+        toast({ title: "Traitement de votre paiement..." });
 
-        setTimeout(() => {
+        const checkoutInput = {
+            userId: user.uid,
+            itemId: tier.name,
+            amount: tier.price,
+            itemName: `Abonnement ${tier.name} à ${creatorName}`,
+        };
+
+        let result;
+        if (method === 'stripe') {
+            result = await createStripeCheckoutSession(checkoutInput);
+        } else {
+            result = await createCoinbaseCharge(checkoutInput);
+        }
+
+        setIsLoading(null);
+
+        if (result.success && result.redirectUrl) {
             toast({
-                title: "Abonnement réussi !",
-                description: `Vous êtes maintenant abonné au niveau ${tier.name} de ${creatorName}.`,
+                title: "Redirection vers le paiement...",
+                description: `Vous allez être redirigé pour finaliser votre abonnement via ${method}.`,
             });
-            closeRef.current?.click();
-        }, 1500);
+            router.push(result.redirectUrl);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: "Échec du paiement",
+                description: result.error || "Une erreur est survenue.",
+            });
+        }
     };
 
   return (
@@ -77,13 +107,13 @@ function PaymentDialog({ tier, creatorName }: { tier: SubscriptionTier; creatorN
         <div className="py-4 space-y-4">
             <p className="text-sm text-muted-foreground">Choisissez votre méthode de paiement pour finaliser l'abonnement.</p>
             <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center" onClick={() => handlePayment('Stripe')}>
+                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center" onClick={() => handlePayment('stripe')} disabled={!!isLoading}>
                     <StripeIcon className="text-[#6772E5]" />
-                    <span>Payer avec Stripe</span>
+                    <span>{isLoading === 'stripe' ? 'Traitement...' : 'Payer avec Stripe'}</span>
                 </Button>
-                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center" onClick={() => handlePayment('Coinbase')}>
+                <Button variant="outline" className="w-full justify-start h-14 text-lg gap-4 px-4 items-center" onClick={() => handlePayment('coinbase')} disabled={!!isLoading}>
                     <CoinbaseIcon className="text-[#0052FF]" />
-                     <span>Payer avec Coinbase</span>
+                     <span>{isLoading === 'coinbase' ? 'Traitement...' : 'Payer avec Coinbase'}</span>
                 </Button>
             </div>
         </div>
