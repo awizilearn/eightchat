@@ -1,57 +1,98 @@
 'use client';
 
 import { ArrowRight, ShieldCheck } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import placeholderData from '@/lib/placeholder-images.json';
-import type { ImagePlaceholder } from '@/lib/placeholder-images';
+import { CreatorCard } from '@/components/creators/creator-card';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import { useMemo } from 'react';
+import type { UserProfile } from '@/lib/chat-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const PlaceHolderImages: ImagePlaceholder[] = placeholderData.placeholderImages;
+function CreatorsShowcase() {
+    const firestore = useFirestore();
+
+    const creatorsQuery = useMemo(() => {
+        if (!firestore) return null;
+        // Fetch a limited number of creators for the showcase
+        return query(collection(firestore, 'users'), where('role', '==', 'createur'), limit(4));
+    }, [firestore]);
+
+    const { data: creatorsData, loading } = useCollection(creatorsQuery);
+
+    const creators = useMemo(() => {
+        if (!creatorsData) return [];
+        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
+    }, [creatorsData]);
+
+    if (loading) {
+        return (
+            <div className="my-8 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[...Array(2)].map((_, i) => (
+                   <div key={i} className="flex flex-col space-y-4 rounded-xl border bg-card text-card-foreground shadow">
+                        <Skeleton className="h-40 w-full" />
+                        <div className="flex items-end space-x-4 px-4">
+                            <Skeleton className="h-20 w-20 -mt-10 border-4 border-card rounded-full" />
+                            <div className="space-y-2 pb-2">
+                                <Skeleton className="h-5 w-[150px]" />
+                                <Skeleton className="h-4 w-[100px]" />
+                            </div>
+                        </div>
+                         <div className="px-4 pb-4 space-y-2">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-3/4" />
+                         </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    
+    if (creators.length === 0) {
+        return null; // Don't show anything if no creators are found
+    }
+
+    return (
+        <div className="my-8 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {creators.slice(0, 2).map((creator, index) => (
+                 <div key={creator.id} className={index === 1 ? 'hidden sm:block' : ''}>
+                    <CreatorCard creator={creator} />
+                 </div>
+            ))}
+        </div>
+    );
+}
+
 
 export default function WelcomePage() {
   const router = useRouter();
 
-  const onboardingImage = PlaceHolderImages.find(
-    (img) => img.id === 'onboarding-image'
-  );
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-6">
-      <main className="flex w-full max-w-md flex-col items-center text-center">
+      <main className="flex w-full max-w-4xl flex-col items-center text-center">
         <ShieldCheck className="h-10 w-10 text-primary" />
         
-        <div className="my-8 w-full overflow-hidden rounded-2xl border-2 border-border shadow-lg">
-           {onboardingImage && (
-            <Image
-                src={onboardingImage.imageUrl}
-                alt={onboardingImage.description}
-                width={600}
-                height={400}
-                className="aspect-[4/3] w-full object-cover"
-                data-ai-hint={onboardingImage.imageHint}
-                priority
-            />
-           )}
-        </div>
-
-        <h1 className="font-headline text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+        <h1 className="mt-4 font-headline text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
           Unlock Exclusive Worlds
         </h1>
-        <p className="mt-4 max-w-xs text-base text-muted-foreground sm:text-lg">
+        <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
           Access premium content from your favorite creators. Subscribe securely
           with Stripe or Crypto and connect with end-to-end encrypted
           messaging.
         </p>
 
-        <div className="mt-10 flex w-full flex-col gap-4">
+        <CreatorsShowcase />
+
+        <div className="mt-4 flex w-full max-w-md flex-col gap-4">
           <Button
             size="lg"
             className="h-12 text-base"
             onClick={() => router.push('/login')}
           >
             Get Started
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button
             variant="link"
@@ -62,7 +103,7 @@ export default function WelcomePage() {
           </Button>
         </div>
       </main>
-      <footer className="mt-8 text-center text-xs text-muted-foreground">
+      <footer className="mt-12 text-center text-xs text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
       </footer>
     </div>
