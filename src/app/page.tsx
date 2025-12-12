@@ -18,7 +18,7 @@ function CreatorsShowcase() {
     const creatorsQuery = useMemo(() => {
         if (!firestore) return null;
         // Fetch a limited number of creators for the showcase
-        return query(collection(firestore, 'users'), where('role', '==', 'createur'), limit(4));
+        return query(collection(firestore, 'users'), where('role', '==', 'createur'), limit(1));
     }, [firestore]);
 
     const { data: creatorsData, loading } = useCollection(creatorsQuery);
@@ -30,23 +30,21 @@ function CreatorsShowcase() {
 
     if (loading) {
         return (
-            <div className="my-8 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[...Array(2)].map((_, i) => (
-                   <div key={i} className="flex flex-col space-y-4 rounded-xl border bg-card text-card-foreground shadow">
-                        <Skeleton className="h-40 w-full" />
-                        <div className="flex items-end space-x-4 px-4">
-                            <Skeleton className="h-20 w-20 -mt-10 border-4 border-card rounded-full" />
-                            <div className="space-y-2 pb-2">
-                                <Skeleton className="h-5 w-[150px]" />
-                                <Skeleton className="h-4 w-[100px]" />
-                            </div>
+            <div className="my-8 w-full max-w-sm">
+               <div className="flex flex-col space-y-4 rounded-xl border bg-card text-card-foreground shadow">
+                    <Skeleton className="h-40 w-full" />
+                    <div className="flex items-end space-x-4 px-4">
+                        <Skeleton className="h-20 w-20 -mt-10 border-4 border-card rounded-full" />
+                        <div className="space-y-2 pb-2">
+                            <Skeleton className="h-5 w-[150px]" />
+                            <Skeleton className="h-4 w-[100px]" />
                         </div>
-                         <div className="px-4 pb-4 space-y-2">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-3/4" />
-                         </div>
                     </div>
-                ))}
+                     <div className="px-4 pb-4 space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                     </div>
+                </div>
             </div>
         );
     }
@@ -56,11 +54,9 @@ function CreatorsShowcase() {
     }
 
     return (
-        <div className="my-8 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {creators.slice(0, 2).map((creator, index) => (
-                 <div key={creator.id} className={index === 1 ? 'hidden sm:block' : ''}>
-                    <CreatorCard creator={creator} />
-                 </div>
+        <div className="my-8 w-full max-w-sm">
+            {creators.map((creator) => (
+                 <CreatorCard key={creator.id} creator={creator} />
             ))}
         </div>
     );
