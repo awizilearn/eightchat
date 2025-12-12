@@ -20,15 +20,16 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import type { ModerationAction, UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
 
 type ActionStatus = 'All Actions' | 'Approved' | 'Rejected' | 'Warnings' | 'Banned' | 'Muted';
+type DateRange = '24hours' | '7days' | '30days' | 'all';
 
 const actionTypeToStatusMap: { [key in ModerationAction['actionType']]: ActionStatus } = {
   contentApproved: 'Approved',
@@ -57,6 +58,9 @@ const ICON_BGS: { [key in ModerationAction['actionType']]: string } = {
 const filterButtons: ActionStatus[] = ['All Actions', 'Approved', 'Rejected', 'Warnings', 'Banned', 'Muted'];
 
 function ModerationItem({ action }: { action: ModerationAction & {id: string} }) {
+    // In a real app, you'd fetch the moderator's profile to show their name
+    const moderatorDisplayName = action.moderatorId.substring(0, 8) + '...';
+
     return (
         <li className="flex items-start gap-4">
             <div
@@ -77,10 +81,10 @@ function ModerationItem({ action }: { action: ModerationAction & {id: string} })
                     {action.duration ? `for ${action.duration}h` : ''}
                 </p>
                 <p className="text-xs text-muted-foreground/70">
-                    by {action.moderatorId} &bull;{' '}
+                    par {moderatorDisplayName} &bull;{' '}
                     {action.timestamp instanceof Timestamp
                         ? formatDistanceToNow(action.timestamp.toDate(), { addSuffix: true, locale: fr })
-                        : action.timestamp}
+                        : String(action.timestamp)}
                 </p>
             </div>
         </li>
@@ -93,6 +97,8 @@ export default function ModerationPage() {
     const router = useRouter();
 
     const [activeTab, setActiveTab] = useState<ActionStatus>('All Actions');
+    const [dateRange, setDateRange] = useState<DateRange>('7days');
+    const [selectedModerator, setSelectedModerator] = useState<string>('all');
 
     const userProfileRef = useMemo(() => {
         if (!user || !firestore) return null;
@@ -103,8 +109,7 @@ export default function ModerationPage() {
 
     const moderationQuery = useMemo(() => {
         if (!firestore) return null;
-        // In a real app, you might want to add ordering and limits
-        return query(collection(firestore, 'moderation-actions'));
+        return query(collection(firestore, 'moderation-actions'), orderBy('timestamp', 'desc'));
     }, [firestore]);
 
     const { data: moderationData, loading: actionsLoading } = useCollection(moderationQuery);
@@ -114,10 +119,25 @@ export default function ModerationPage() {
         return moderationData.docs.map(doc => ({ id: doc.id, ...doc.data() } as ModerationAction & {id: string}));
     }, [moderationData]);
     
-    const filteredData = useMemo(() => actions.filter(item => {
-        if (activeTab === 'All Actions') return true;
-        return actionTypeToStatusMap[item.actionType] === activeTab;
-    }), [actions, activeTab]);
+    const uniqueModerators = useMemo(() => {
+        const moderatorIds = new Set(actions.map(a => a.moderatorId));
+        return Array.from(moderatorIds);
+    }, [actions]);
+
+    const filteredData = useMemo(() => {
+      let dateLimit: Date | null = null;
+      if (dateRange === '24hours') dateLimit = subDays(new Date(), 1);
+      if (dateRange === '7days') dateLimit = subDays(new Date(), 7);
+      if (dateRange === '30days') dateLimit = subDays(new Date(), 30);
+
+      return actions.filter(item => {
+        const statusMatch = activeTab === 'All Actions' || actionTypeToStatusMap[item.actionType] === activeTab;
+        const moderatorMatch = selectedModerator === 'all' || item.moderatorId === selectedModerator;
+        const dateMatch = !dateLimit || (item.timestamp instanceof Timestamp && item.timestamp.toDate() > dateLimit);
+
+        return statusMatch && moderatorMatch && dateMatch;
+      });
+    }, [actions, activeTab, dateRange, selectedModerator]);
 
     const loading = userLoading || profileLoading;
 
@@ -175,17 +195,17 @@ export default function ModerationPage() {
 
             <main className="p-4">
                 <h2 className="font-headline text-3xl font-bold text-primary mb-6">
-                    Moderation Notifications
+                    Notifications de Modération
                 </h2>
 
                 <div className="space-y-4 mb-6">
-                    <div className="flex space-x-2 overflow-x-auto pb-2">
+                    <div className="space-x-2 overflow-x-auto pb-2 flex">
                         {filterButtons.map((filter) => (
                             <Button
                                 key={filter}
                                 variant={activeTab === filter ? 'default' : 'secondary'}
                                 onClick={() => setActiveTab(filter)}
-                                className="rounded-full px-4"
+                                className="rounded-full px-4 flex-shrink-0"
                             >
                                 {filter}
                             </Button>
@@ -197,27 +217,33 @@ export default function ModerationPage() {
                             <DropdownMenuTrigger asChild>
                                 <Button variant="secondary" className="flex-1">
                                     <Calendar className="mr-2 h-4 w-4" />
-                                    Last 7 Days
+                                    {dateRange === '24hours' && '24 dernières heures'}
+                                    {dateRange === '7days' && '7 derniers jours'}
+                                    {dateRange === '30days' && '30 derniers jours'}
+                                    {dateRange === 'all' && 'Toute la période'}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem>Last 24 hours</DropdownMenuItem>
-                                <DropdownMenuItem>Last 7 Days</DropdownMenuItem>
-                                <DropdownMenuItem>Last 30 Days</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('24hours')}>24 dernières heures</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('7days')}>7 derniers jours</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('30days')}>30 derniers jours</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('all')}>Toute la période</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="secondary" className="flex-1">
                                     <Users className="mr-2 h-4 w-4" />
-                                    All Moderators
+                                    {selectedModerator === 'all' ? 'Tous les modérateurs' : selectedModerator.substring(0, 8)}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                {/* These should be populated dynamically too */}
-                                <DropdownMenuItem>@admin_user</DropdownMenuItem>
-                                <DropdownMenuItem>@moderator_x</DropdownMenuItem>
-                                <DropdownMenuItem>@moderator_y</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSelectedModerator('all')}>Tous les modérateurs</DropdownMenuItem>
+                                {uniqueModerators.map(modId => (
+                                   <DropdownMenuItem key={modId} onClick={() => setSelectedModerator(modId)}>
+                                        {modId.substring(0, 8)}...
+                                   </DropdownMenuItem>
+                                ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
