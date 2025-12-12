@@ -101,7 +101,7 @@ export default function HomePage() {
   const { user } = useUser();
 
   return (
-    <>
+    <div className="pb-24">
       <Header />
       <main className="container mx-auto py-8 px-4">
         <div className="mb-12">
@@ -125,9 +125,6 @@ export default function HomePage() {
         <RecommendedCreators />
 
       </main>
-      <footer className="py-8 mt-16 text-center text-muted-foreground border-t">
-         <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
-      </footer>
-    </>
+    </div>
   );
 }

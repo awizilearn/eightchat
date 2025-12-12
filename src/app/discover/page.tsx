@@ -65,7 +65,7 @@ function AllCreators() {
 
 export default function DiscoverPage() {
   return (
-    <>
+    <div className="pb-24">
       <Header />
       <main className="container mx-auto py-8 px-4">
         <RecommendedCreators />
@@ -81,9 +81,6 @@ export default function DiscoverPage() {
           <AllCreators />
         </section>
       </main>
-      <footer className="py-8 mt-16 text-center text-muted-foreground border-t">
-        <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
-      </footer>
-    </>
+    </div>
   );
 }

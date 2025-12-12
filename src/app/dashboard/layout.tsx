@@ -8,7 +8,7 @@ import { useUser } from '@/firebase';
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/discover', icon: Compass, label: 'Content' },
-  { href: '/chat', icon: MessageSquare, label: 'Messages' },
+  { href: '/messages', icon: MessageSquare, label: 'Messages' },
   { href: '/creators/me', icon: UserCircle, label: 'Profile' },
 ];
 
@@ -31,6 +31,10 @@ export default function DashboardLayout({
   const finalNavItems = navItems.map(item => {
     if (item.href === '/creators/me') {
         return { ...item, href: getProfileLink() };
+    }
+    // Update the messages link to point to the new chat page structure
+    if (item.href === '/chat') {
+        return { ...item, href: '/messages' };
     }
     return item;
   });
