@@ -46,22 +46,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function AppleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path d="M19.39,14.73a5.2,5.2,0,0,1-1.46,3.87,5.77,5.77,0,0,1-4.21,1.82,4.43,4.43,0,0,1-2.34-.63,4.67,4.67,0,0,1-1.92-1.72,1,1,0,0,1-.13-1.07,1,1,0,0,1,1-.61,1,1,0,0,1,1,.69,2.6,2.6,0,0,0,1.1,1,2.57,2.57,0,0,0,1.52.42,3.3,3.3,0,0,0,2.35-1,3.17,3.17,0,0,0,1-2.29,4.24,4.24,0,0,0-1.33-3.15,4.38,4.38,0,0,0-3.3-1.3H9.5a5.3,5.3,0,0,1-3.33-1,5.06,5.06,0,0,1-1.4-3.56A5,5,0,0,1,6.38,4.4,5.43,5.43,0,0,1,10.6,2.53a4.67,4.67,0,0,1,2.5.65,4.5,4.5,0,0,1,1.83,1.66,1,1,0,0,1,.13,1.06,1,1,0,0,1-1,.62,1,1,0,0,1-1-.7,2.5,2.5,0,0,0-1-.95,2.6,2.6,0,0,0-1.5-.4,3.25,3.25,0,0,0-2.37,1,3.06,3.06,0,0,0-1,2.3,4.3,4.3,0,0,0,1.34,3.16,4.5,4.5,0,0,0,3.3,1.3h2.32a3.86,3.86,0,0,1,2.83,1.16A3.56,3.56,0,0,1,19.39,14.73Z"/>
-    </svg>
-  );
-}
-
-function XIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 1200 1227" fill="none" {...props}>
-      <path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6904H306.615L611.412 515.685L658.88 583.579L1055.08 1150.31H892.476L569.165 687.854V687.828Z" fill="currentColor"/>
-    </svg>
-  );
-}
-
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
@@ -87,30 +71,20 @@ export default function LoginPage() {
     }
   }, [user, loading, router, firestore]);
 
-  const handleSocialSignIn = async (providerName: 'google' | 'apple' | 'x') => {
+  const handleGoogleSignIn = async () => {
     if (!auth) return;
 
-    let provider;
-    if (providerName === 'google') {
-      provider = new GoogleAuthProvider();
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Non implémenté",
-            description: `La connexion avec ${providerName} n'est pas encore configurée.`
-        })
-      return;
-    }
-
+    const provider = new GoogleAuthProvider();
+    
     try {
       await signInWithPopup(auth, provider);
       // The useEffect hook will handle redirection
     } catch (error) {
-      console.error('Error signing in with social provider', error);
+      console.error('Error signing in with Google', error);
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
-        description: "Impossible de se connecter. Veuillez réessayer."
+        description: "Impossible de se connecter avec Google. Veuillez réessayer."
       })
     }
   };
@@ -210,25 +184,10 @@ export default function LoginPage() {
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
-                onClick={() => handleSocialSignIn('google')}
+                onClick={handleGoogleSignIn}
             >
                 <GoogleIcon className="mr-2 h-5 w-5" />
                 Continue with Google
-            </Button>
-             <Button
-                className="w-full h-12 text-md bg-foreground text-background hover:bg-foreground/80"
-                onClick={() => handleSocialSignIn('x')}
-            >
-                <XIcon className="mr-2 h-4 w-4" />
-                Continue with X
-            </Button>
-             <Button
-                className="w-full h-12 text-md"
-                variant="outline"
-                onClick={() => handleSocialSignIn('apple')}
-            >
-                <AppleIcon className="mr-2 h-5 w-5" />
-                Continue with Apple
             </Button>
         </div>
 
