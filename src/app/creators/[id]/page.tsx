@@ -131,7 +131,7 @@ export default function CreatorProfilePage({
 
     if (!querySnapshot.empty) {
       const conversationId = querySnapshot.docs[0].id;
-      router.push(`/chat?conversationId=${conversationId}`);
+      router.push(`/messages?conversationId=${conversationId}`);
     } else {
       try {
         const newConversation = await addDoc(conversationsRef, {
@@ -140,7 +140,7 @@ export default function CreatorProfilePage({
           updatedAt: serverTimestamp(),
           lastMessage: '',
         });
-        router.push(`/chat?conversationId=${newConversation.id}`);
+        router.push(`/messages?conversationId=${newConversation.id}`);
       } catch (error) {
         console.error('Error creating conversation:', error);
       }
@@ -206,7 +206,7 @@ export default function CreatorProfilePage({
 
         <div className="flex w-full max-w-full gap-3 p-4">
             <Button 
-                className="flex-1 h-12 px-6 rounded-full bg-primary text-background text-base font-bold"
+                className="flex-1 h-12 px-6 rounded-full bg-primary text-primary-foreground text-base font-bold"
                 onClick={handleSubscribe}
                 disabled={params.id === user?.uid}
             >

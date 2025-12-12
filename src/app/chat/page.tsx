@@ -22,6 +22,7 @@ import { encryptMessage, decryptMessage, rehydratePreKeyBundle } from '@/lib/sig
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 const UNLOCKED_MESSAGES_STORAGE_KEY = 'unlocked_messages';
 
@@ -39,16 +40,18 @@ function ChatHeader({ otherParticipantId }: { otherParticipantId: string | null 
 
   if (loading) {
     return (
-      <div className="sticky top-0 z-10 border-b border-white/10 bg-sidebar p-4 pb-2">
-        <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12" />
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <Skeleton className="h-6 w-24" />
-            </div>
-            <Skeleton className="h-12 w-12" />
+      <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-sidebar-border bg-sidebar px-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <span className="material-symbols-outlined">arrow_back_ios_new</span>
+          </Button>
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-24" />
+          </div>
         </div>
-      </div>
+        <Skeleton className="h-8 w-8" />
+      </header>
     );
   }
 
@@ -57,25 +60,25 @@ function ChatHeader({ otherParticipantId }: { otherParticipantId: string | null 
   }
   
   return (
-    <div className="sticky top-0 z-10 border-b border-sidebar-border bg-sidebar p-4 pb-2">
-        <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-4">
-                <button onClick={() => router.back()} className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg bg-transparent text-sidebar-foreground md:hidden">
-                    <span className="material-symbols-outlined">arrow_back_ios_new</span>
-                </button>
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={participant?.photoURL} alt={participant?.displayName} />
-                  <AvatarFallback>{participant?.displayName?.charAt(0)}</AvatarFallback>
-                </Avatar>
+    <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-sidebar-border bg-sidebar px-4">
+        <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/messages')} className="md:hidden -ml-2">
+                <span className="material-symbols-outlined">arrow_back_ios_new</span>
+            </Button>
+            <Avatar className="h-10 w-10">
+                <AvatarImage src={participant?.photoURL} alt={participant?.displayName} />
+                <AvatarFallback>{participant?.displayName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
                 <h2 className="text-sidebar-foreground text-lg font-bold leading-tight tracking-[-0.015em]">{participant?.displayName}</h2>
             </div>
-            <div className="flex items-center justify-end gap-2">
-                <button className="flex h-12 w-12 max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-transparent text-sidebar-foreground">
-                    <span className="material-symbols-outlined">lock</span>
-                </button>
-            </div>
         </div>
-    </div>
+        <div className="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="icon">
+                 <span className="material-symbols-outlined">more_vert</span>
+            </Button>
+        </div>
+    </header>
   );
 }
 
@@ -88,7 +91,11 @@ export default function ChatView({ conversationId }: { conversationId: string })
   const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
   const [unlockedMessages, setUnlockedMessages] = useState<Set<string>>(new Set());
 
-  const { data: userProfileDoc } = useDoc(user && firestore ? doc(firestore, 'users', user.uid) : null);
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  const { data: userProfileDoc } = useDoc(userProfileRef);
   const userProfile = userProfileDoc?.data() as UserProfile;
 
   useEffect(() => {
@@ -176,7 +183,7 @@ export default function ChatView({ conversationId }: { conversationId: string })
         await addDoc(messagesColRef, {
             senderId: user.uid,
             text: ciphertext,
-            plaintext: text,
+            plaintext: text, // Stored for the sender
             createdAt: serverTimestamp(),
             isPaid: false,
         });
@@ -200,13 +207,13 @@ export default function ChatView({ conversationId }: { conversationId: string })
     try {
       await addDoc(messagesColRef, {
           senderId: user.uid,
-          text: 'Paid Content',
-          createdAt: serverTimestamp(),
+          text: 'Paid Content', // Placeholder for encrypted content
           isPaid: true,
           contentTitle: content.title,
           contentPrice: content.price,
           contentImageUrl: content.imageUrl,
-          contentType: 'image',
+          contentType: 'image', // Assuming image for now
+          createdAt: serverTimestamp(),
       });
 
       await updateDoc(conversationDocRef, {
@@ -240,7 +247,7 @@ export default function ChatView({ conversationId }: { conversationId: string })
 
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-sidebar">
+    <div className="relative flex h-full flex-col overflow-hidden bg-background">
       <ChatHeader otherParticipantId={otherParticipantId} />
       <MessageList 
           messages={displayableMessages} 

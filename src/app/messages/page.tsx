@@ -1,23 +1,24 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { type Conversation } from '@/lib/chat-data';
 import { ConversationList } from '@/components/chat/conversation-list';
 import ChatView from '../chat/page';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { MessageSquare, Users } from 'lucide-react';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 export default function MessagesPage() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  // Get conversationId from URL query params, or default to the first one
   const initialConversationId = searchParams.get('conversationId');
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(initialConversationId);
 
-  const conversationsQuery = useMemo(() => {
+  const conversationsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
       collection(firestore, 'conversations'),
@@ -33,24 +34,25 @@ export default function MessagesPage() {
     return conversationsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Conversation));
   }, [conversationsData]);
 
-  // Handle setting the selected conversation
-  useState(() => {
-      if (initialConversationId) {
-          setSelectedConversationId(initialConversationId);
-      } else if (conversations.length > 0) {
-          setSelectedConversationId(conversations[0].id);
-      }
-  });
+  useEffect(() => {
+    if (!selectedConversationId && conversations.length > 0) {
+      // If no conversation is selected from the URL, default to the first one.
+      setSelectedConversationId(conversations[0].id);
+    }
+     // If the selected ID is no longer in the list (e.g., deleted convo), reset.
+    if (selectedConversationId && conversations.length > 0 && !conversations.find(c => c.id === selectedConversationId)) {
+        setSelectedConversationId(conversations[0].id);
+    }
+  }, [conversations, selectedConversationId]);
+
 
   const loading = userLoading || conversationsLoading;
 
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
-    // Optional: Update URL without reloading the page
-    window.history.pushState(null, '', `/messages?conversationId=${conversationId}`);
+    // Update URL without a full page reload for better UX.
+    router.push(`/messages?conversationId=${conversationId}`, { scroll: false });
   };
-
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -76,8 +78,20 @@ export default function MessagesPage() {
             </div>
           </div>
         )}
-        {/* On mobile, the chat view will be rendered via a different route or overlay logic */}
-        {/* For this setup, we'll hide the conversation list on mobile when a chat is open */}
+        {/* On mobile, the chat view is often handled by navigating to a new screen.
+            For this example, we show the chat view, and the user can navigate back
+            to the conversation list (which would be a separate mobile view). */}
+        {!selectedConversationId && conversations.length === 0 && !loading && (
+             <div className="h-full flex-col items-center justify-center flex p-4">
+                 <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="p-4 bg-sidebar-accent rounded-full">
+                        <Users className="h-10 w-10 text-sidebar-foreground" />
+                    </div>
+                    <h2 className="text-2xl font-bold">No Conversations Yet</h2>
+                    <p className="text-muted-foreground">Start a new conversation to see it here.</p>
+                </div>
+            </div>
+        )}
       </main>
     </div>
   );
