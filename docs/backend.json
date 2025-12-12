@@ -79,7 +79,7 @@
                     "description": "A list of creator IDs the user is subscribed to."
                 }
             },
-            "required": ["displayName", "email", "role", "signalPreKeyBundle"]
+            "required": ["displayName", "email", "role"]
         },
         "Conversation": {
             "title": "Conversation",

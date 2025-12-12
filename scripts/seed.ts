@@ -1,0 +1,144 @@
+
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
+
+// Check for the service account key from environment variables
+const serviceAccountKey = process.env.SERVICE_ACCOUNT_KEY;
+if (!serviceAccountKey) {
+  console.error("SERVICE_ACCOUNT_KEY environment variable not set. Please provide the service account JSON key.");
+  process.exit(1);
+}
+
+const serviceAccount = JSON.parse(serviceAccountKey);
+
+// Initialize Firebase Admin SDK
+initializeApp({
+  credential: cert(serviceAccount)
+});
+
+const db = getFirestore();
+
+// Data from placeholder-images.json
+const placeholderImages = {
+    "creator-1-avatar": "https://images.unsplash.com/photo-1546961329-78bef0414d7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NTMyNTc1NHww&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-1-banner": "https://images.unsplash.com/photo-1642453208368-7c09aa272829?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZmFzaGlvbiUyMHN0dWRpb3xlbnwwfHx8fDE3NjUyNjA3NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-2-avatar": "https://images.unsplash.com/photo-1607031542107-f6f46b5d54e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjUyODg5NjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-2-banner": "https://images.unsplash.com/photo-1645542933735-e2b556e57d52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjdWxpbmFyeSUyMGtpdGNoZW58ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-3-avatar": "https://images.unsplash.com/photo-1707000414103-c7c65b336e95?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpc3QlMjBwYWludHxlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-3-banner": "https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8fDE3NjUyNzAyMzkzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-4-avatar": "https://images.unsplash.com/photo-1639916765637-43de505e45a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3cml0ZXIlMjBkZXNrfGVufDB8fHx8MTc2NTM2NjcwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-4-banner": "https://images.unsplash.com/photo-1723334538533-e0fbdaabc637?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dmludGFnZSUyMGxpYnJhcnl8ZW58MHx8fHwxNzY1MzYxNDM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-1": "https://images.unsplash.com/photo-1556139930-c23fa4a4f934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWJzdHJhY3QlMjBnb2xkfGVufDB8fHx8MTc2NTMzNDQxOHww&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-2": "https://images.unsplash.com/photo-1617326021886-53d6be1d7154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwaW50ZXJpb3J8ZW58MHx8fHwxNzY1MzMzNDA3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-3": "https://images.unsplash.com/photo-1616671285410-2a676a9a433d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxnb3VybWV0JTIwZm9vZHxlbnwwfHx8fDE3NjUyNjM2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-4": "https://images.unsplash.com/photo-1720031995259-f2d8ea9734fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXNoaW9uJTIwc2tldGNofGVufDB8fHx8MTc2NTMzMzAxNnww&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-5": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-6": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-7": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-8": "https://images.unsplash.com/photo-1512390225428-a9d51c817f94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8fDE3NjUyNzQwNjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+};
+
+
+const creators = [
+  {
+    id: "elena-moreau",
+    displayName: "Elena Moreau",
+    email: "elena.moreau@example.com",
+    role: "createur",
+    bio: "Weaving stories into fabric. Join my journey in haute couture.",
+    category: "Haute Couture",
+    photoURL: placeholderImages["creator-1-avatar"],
+    bannerUrl: placeholderImages["creator-1-banner"],
+    tiers: [
+      { name: "Bronze", price: 5, perks: ["Accès anticipé aux collections", "Contenu en coulisses"], cta: "S'abonner" },
+      { name: "Silver", price: 15, perks: ["Tous les avantages Bronze", "Tutoriels de couture exclusifs", "Q&A mensuels"], cta: "S'abonner" },
+      { name: "Gold", price: 30, perks: ["Tous les avantages Silver", "Consultations de style personnelles", "Accès à des événements privés"], cta: "S'abonner" },
+    ],
+    content: [
+      { id: "content-1", title: "Golden Thread", type: "image", imageUrl: placeholderImages["content-1"], tier: "Gold" },
+      { id: "content-2", title: "Minimalist Forms", type: "image", imageUrl: placeholderImages["content-2"], tier: "Bronze" },
+      { id: "content-4", title: "Fashion Sketchbook", type: "article", imageUrl: placeholderImages["content-4"], tier: "Silver" },
+    ]
+  },
+  {
+    id: "kenji-tanaka",
+    displayName: "Kenji Tanaka",
+    email: "kenji.tanaka@example.com",
+    role: "createur",
+    bio: "Exploring the art of flavor. From traditional Japanese to modern fusion.",
+    category: "Culinary Arts",
+    photoURL: placeholderImages["creator-2-avatar"],
+    bannerUrl: placeholderImages["creator-2-banner"],
+    tiers: [
+      { name: "Bronze", price: 7, perks: ["Recettes de la semaine", "Conseils de cuisine"], cta: "S'abonner" },
+      { name: "Silver", price: 20, perks: ["Tous les avantages Bronze", "Cours de cuisine en direct", "Livre de recettes numérique"], cta: "S'abonner" },
+      { name: "Gold", price: 50, perks: ["Tous les avantages Silver", "Ateliers de dégustation de saké", "Boîte d'ingrédients surprise"], cta: "S'abonner" },
+    ],
+    content: [
+        { id: "content-3", title: "Gourmet Plating", type: "video", imageUrl: placeholderImages["content-3"], tier: "Silver" },
+    ]
+  },
+  {
+    id: "isabella-rossi",
+    displayName: "Isabella Rossi",
+    email: "isabella.rossi@example.com",
+    role: "createur",
+    bio: "Capturing emotion on canvas. Follow my process from blank slate to finished piece.",
+    category: "Oil Painting",
+    photoURL: placeholderImages["creator-3-avatar"],
+    bannerUrl: placeholderImages["creator-3-banner"],
+    tiers: [
+      { name: "Bronze", price: 10, perks: ["Accès aux archives de peintures", "Vlogs de studio"], cta: "S'abonner" },
+      { name: "Silver", price: 25, perks: ["Tous les avantages Bronze", "Tutoriels de peinture en accéléré", "Critiques d'art"], cta: "S'abonner" },
+      { name: "Gold", price: 60, perks: ["Tous les avantages Silver", "Recevoir une impression signée par an", "Commission prioritaire"], cta: "S'abonner" },
+    ],
+    content: [
+        { id: "content-5", title: "Canvas Dreams", type: "image", imageUrl: placeholderImages["content-5"], tier: "Bronze" },
+        { id: "content-6", title: "Night Cityscape", type: "image", imageUrl: placeholderImages["content-6"], tier: "Gold" },
+    ]
+  },
+  {
+    id: "marcus-thorne",
+    displayName: "Marcus Thorne",
+    email: "marcus.thorne@example.com",
+    role: "createur",
+    bio: "Chronicler of lost worlds and forgotten futures. Support my writing.",
+    category: "Fiction Writer",
+    photoURL: placeholderImages["creator-4-avatar"],
+    bannerUrl: placeholderImages["creator-4-banner"],
+    tiers: [
+      { name: "Bronze", price: 3, perks: ["Accès aux nouvelles", "Chapitres en avance"], cta: "S'abonner" },
+      { name: "Silver", price: 10, perks: ["Tous les avantages Bronze", "Contenu sur la construction du monde", "Q&A avec les personnages"], cta: "S'abonner" },
+      { name: "Gold", price: 25, perks: ["Tous les avantages Silver", "Histoires exclusives au palier", "Votre nom dans les remerciements"], cta: "S'abonner" },
+    ],
+    content: [
+      { id: "content-7", title: "Manuscript", type: "article", imageUrl: placeholderImages["content-7"], tier: "Bronze" },
+      { id: "content-8", title: "The Old Camera", type: "video", imageUrl: placeholderImages["content-8"], tier: "Silver" },
+    ]
+  }
+];
+
+const seedDatabase = async () => {
+  console.log("Seeding database...");
+  const batch = db.batch();
+
+  // Note: This seed script doesn't handle Signal keys.
+  // Real users created via the app will have them.
+  creators.forEach(creator => {
+    const docRef = db.collection('users').doc(creator.id);
+    batch.set(docRef, { ...creator, signalPreKeyBundle: {} });
+  });
+
+  try {
+    await batch.commit();
+    console.log("Database seeded successfully with", creators.length, "creators.");
+  } catch (error) {
+    console.error("Error seeding database:", error);
+  }
+};
+
+seedDatabase();
