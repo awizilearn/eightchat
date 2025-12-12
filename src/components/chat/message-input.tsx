@@ -50,7 +50,7 @@ export function MessageInput({ onSendMessage, onSendPaidMessage, isCreator }: Me
 
 
   return (
-    <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm">
+    <div className="sticky bottom-0 z-10 bg-sidebar/80 backdrop-blur-sm">
         <form onSubmit={handleTextSubmit} className="flex items-center px-4 py-3 gap-3">
             <div className="flex w-full flex-1 items-stretch rounded-full h-12 bg-input">
                 {isCreator && (
@@ -93,7 +93,7 @@ export function MessageInput({ onSendMessage, onSendPaidMessage, isCreator }: Me
                 <Input 
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    className="flex w-full min-w-0 flex-1 resize-none overflow-hidden text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-muted-foreground px-2 text-base font-normal leading-normal" 
+                    className="flex w-full min-w-0 flex-1 resize-none overflow-hidden text-foreground focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-muted-foreground px-2 text-base font-normal leading-normal" 
                     placeholder="Type a message..."
                 />
 

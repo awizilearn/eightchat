@@ -13,27 +13,21 @@ import {
   orderBy,
   updateDoc,
   getDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { type Conversation, type Message, type UserProfile } from '@/lib/chat-data';
 import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { encryptMessage, decryptMessage, rehydratePreKeyBundle } from '@/lib/signal-protocol';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 
 const UNLOCKED_MESSAGES_STORAGE_KEY = 'unlocked_messages';
 
-function ChatHeader({ conversation }: { conversation: Conversation | null | undefined }) {
-  const { user } = useUser();
+function ChatHeader({ otherParticipantId }: { otherParticipantId: string | null | undefined }) {
   const firestore = useFirestore();
   const router = useRouter();
-
-  const otherParticipantId = useMemo(() => {
-      if (!conversation) return null;
-      return conversation.participantIds.find(id => id !== user?.uid);
-  }, [conversation, user]);
 
   const participantRef = useMemoFirebase(() => {
       if (!firestore || !otherParticipantId) return null;
@@ -43,9 +37,9 @@ function ChatHeader({ conversation }: { conversation: Conversation | null | unde
   const { data: participantDoc, loading } = useDoc(participantRef);
   const participant = participantDoc?.data() as UserProfile;
 
-  if (loading || !conversation) {
+  if (loading) {
     return (
-      <div className="sticky top-0 z-10 border-b border-white/10 bg-background p-4 pb-2">
+      <div className="sticky top-0 z-10 border-b border-white/10 bg-sidebar p-4 pb-2">
         <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-4">
                 <Skeleton className="h-12 w-12" />
@@ -54,55 +48,43 @@ function ChatHeader({ conversation }: { conversation: Conversation | null | unde
             </div>
             <Skeleton className="h-12 w-12" />
         </div>
-        <div className="flex justify-around pt-2">
-            <Skeleton className="h-8 flex-1" />
-            <Skeleton className="h-8 flex-1" />
-        </div>
       </div>
     );
   }
+
+  if (!participant) {
+    return null;
+  }
   
   return (
-    <div className="sticky top-0 z-10 border-b border-white/10 bg-background p-4 pb-2">
+    <div className="sticky top-0 z-10 border-b border-sidebar-border bg-sidebar p-4 pb-2">
         <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-4">
-                <button onClick={() => router.back()} className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg bg-transparent text-white">
-                    <span className="material-symbols-outlined text-white">arrow_back_ios_new</span>
+                <button onClick={() => router.back()} className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg bg-transparent text-sidebar-foreground md:hidden">
+                    <span className="material-symbols-outlined">arrow_back_ios_new</span>
                 </button>
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={participant?.photoURL} alt={participant?.displayName} />
                   <AvatarFallback>{participant?.displayName?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">{participant?.displayName}</h2>
+                <h2 className="text-sidebar-foreground text-lg font-bold leading-tight tracking-[-0.015em]">{participant?.displayName}</h2>
             </div>
             <div className="flex items-center justify-end gap-2">
-                <button className="flex h-12 w-12 max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-transparent text-white">
-                    <span className="material-symbols-outlined text-white">lock</span>
+                <button className="flex h-12 w-12 max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-transparent text-sidebar-foreground">
+                    <span className="material-symbols-outlined">lock</span>
                 </button>
             </div>
-        </div>
-        <div className="flex justify-around pt-2">
-            <button className="flex-1 border-b-2 border-primary pb-1 text-primary text-sm font-semibold">
-                Chat
-            </button>
-            <button className="flex-1 border-b-2 border-transparent pb-1 text-muted-foreground/80 text-sm font-semibold">
-                Exclusive
-            </button>
         </div>
     </div>
   );
 }
 
 
-export default function ChatPage() {
+export default function ChatView({ conversationId }: { conversationId: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const { toast } = useToast();
   
-  const conversationId = searchParams.get('conversationId');
-
   const [decryptedMessages, setDecryptedMessages] = useState<Map<string, string>>(new Map());
   const [unlockedMessages, setUnlockedMessages] = useState<Set<string>>(new Set());
 
@@ -251,18 +233,15 @@ export default function ChatPage() {
 
   const displayableMessages = useMemo(() => messages.map(getDisplayableMessage), [messages, getDisplayableMessage]);
   
-  if (!conversationId) {
-    return (
-        <div className="relative mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-background items-center justify-center">
-            <p className="text-muted-foreground">Aucune conversation sélectionnée.</p>
-            <Button onClick={() => router.push('/discover')}>Explorer les créateurs</Button>
-        </div>
-    )
-  }
+  const otherParticipantId = useMemo(() => {
+    if (!conversation) return null;
+    return conversation.participantIds.find(id => id !== user?.uid);
+  }, [conversation, user]);
+
 
   return (
-    <div className="relative mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-background">
-      <ChatHeader conversation={conversation} />
+    <div className="relative flex h-full flex-col overflow-hidden bg-sidebar">
+      <ChatHeader otherParticipantId={otherParticipantId} />
       <MessageList 
           messages={displayableMessages} 
           currentUserId={user?.uid} 

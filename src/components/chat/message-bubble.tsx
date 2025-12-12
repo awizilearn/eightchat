@@ -72,7 +72,7 @@ function LockedContent({ message, onUnlock }: { message: Message; onUnlock: () =
             <h3 className="text-white text-base font-semibold leading-tight tracking-[-0.015em]">{message.contentTitle}</h3>
             <p className="text-muted-foreground/80 text-sm font-normal leading-normal line-clamp-2">{message.text}</p>
             <Button
-                className="flex items-center justify-center gap-2 rounded-full bg-primary py-2 text-background text-base font-semibold"
+                className="flex items-center justify-center gap-2 rounded-full bg-primary py-2 text-primary-foreground text-base font-semibold"
                 onClick={handlePurchase}
                 disabled={isLoading}
             >
@@ -164,7 +164,7 @@ export function MessageBubble({ message, isOwnMessage, isContentUnlocked, onUnlo
       <div className={cn("flex flex-1 flex-col gap-1", isOwnMessage ? 'items-end' : 'items-start')}>
         <p className={cn(
           "text-base font-normal leading-normal flex max-w-[280px] rounded-2xl px-4 py-3",
-          isOwnMessage ? 'bg-primary text-background rounded-br-none' : 'bg-secondary text-white rounded-bl-none'
+          isOwnMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-secondary text-foreground rounded-bl-none'
         )}>
           {message.text}
         </p>

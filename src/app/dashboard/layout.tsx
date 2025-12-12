@@ -32,10 +32,6 @@ export default function DashboardLayout({
     if (item.href === '/creators/me') {
         return { ...item, href: getProfileLink() };
     }
-    // Update the messages link to point to the new chat page structure
-    if (item.href === '/chat') {
-        return { ...item, href: '/messages' };
-    }
     return item;
   });
 

@@ -33,15 +33,15 @@ export function MessageList({ messages, currentUserId, loading, unlockedMessages
             {loading ? (
             <div className='space-y-2 p-4'>
                 <div className='flex items-end gap-2'>
-                <Skeleton className='h-8 w-8 rounded-full' />
-                <Skeleton className='h-12 w-48 rounded-2xl' />
+                <Skeleton className='h-8 w-8 rounded-full bg-sidebar-accent' />
+                <Skeleton className='h-12 w-48 rounded-2xl bg-sidebar-accent' />
                 </div>
                 <div className='flex items-end gap-2 flex-row-reverse'>
-                <Skeleton className='h-12 w-64 rounded-2xl' />
+                <Skeleton className='h-12 w-64 rounded-2xl bg-primary/50' />
                 </div>
                 <div className='flex items-end gap-2'>
-                <Skeleton className='h-8 w-8 rounded-full' />
-                <Skeleton className='h-16 w-40 rounded-2xl' />
+                <Skeleton className='h-8 w-8 rounded-full bg-sidebar-accent' />
+                <Skeleton className='h-16 w-40 rounded-2xl bg-sidebar-accent' />
                 </div>
             </div>
             ) : (
