@@ -9,6 +9,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { useMemo } from 'react';
 import type { UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 function AllCreators() {
     const firestore = useFirestore();
@@ -28,21 +29,25 @@ function AllCreators() {
     if (loading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                    <div key={i} className="flex flex-col space-y-4">
-                        <Skeleton className="h-40 w-full" />
-                        <div className="flex items-end space-x-4 px-4">
-                            <Skeleton className="h-20 w-20 -mt-10 border-4 border-card rounded-full" />
-                            <div className="space-y-2 pb-2">
-                                <Skeleton className="h-5 w-[150px]" />
-                                <Skeleton className="h-4 w-[100px]" />
+                {[...Array(8)].map((_, i) => (
+                    <Card className="overflow-hidden" key={i}>
+                        <CardContent className="p-0">
+                            <div className="relative h-40 w-full">
+                                <Skeleton className="h-full w-full" />
                             </div>
-                        </div>
-                         <div className="px-4 pb-4 space-y-2">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-3/4" />
-                         </div>
-                    </div>
+                            <div className="p-4 pt-0 -mt-10 relative z-10 flex items-end gap-4">
+                                <Skeleton className="h-20 w-20 rounded-full border-4 border-card" />
+                                <div className="pb-2 space-y-2">
+                                    <Skeleton className="h-5 w-24" />
+                                    <Skeleton className="h-4 w-16" />
+                                </div>
+                            </div>
+                            <div className="px-4 pb-4 space-y-2">
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-3/4" />
+                            </div>
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
         );
