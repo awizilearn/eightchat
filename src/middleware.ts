@@ -13,8 +13,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
     
-  const publicPaths = ['/login', '/signup', '/'];
-  const isPublicPath = publicPaths.includes(pathname);
+  const publicPaths = ['/login', '/signup', '/', '/admin'];
+  const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
 
   // This cookie is set by Firebase Auth on the client side
   const authCookie = request.cookies.get('firebaseAuth');
@@ -24,8 +24,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If user is logged in and tries to access a public path, redirect to home.
-  if (authCookie && isPublicPath) {
+  // If user is logged in and tries to access a public path like login or signup, redirect to home.
+  if (authCookie && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
      return NextResponse.redirect(new URL('/home', request.url));
   }
 
