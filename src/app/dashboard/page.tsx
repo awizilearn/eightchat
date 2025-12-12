@@ -15,6 +15,52 @@ import { doc } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { UserProfile } from '@/lib/chat-data';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function DashboardSkeleton() {
+    return (
+        <div className="flex min-h-screen w-full flex-col bg-background">
+            <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col gap-8">
+                    {/* Header Skeleton */}
+                    <header className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <div className='space-y-2'>
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-6 w-32" />
+                            </div>
+                        </div>
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                    </header>
+                    {/* Balance Skeleton */}
+                    <Card className="w-full">
+                        <CardContent className="p-6 space-y-4">
+                             <Skeleton className="h-4 w-32" />
+                             <Skeleton className="h-10 w-48" />
+                             <div className="grid grid-cols-2 gap-2">
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                             </div>
+                             <Skeleton className="h-12 w-full" />
+                        </CardContent>
+                    </Card>
+                     {/* Stats Skeleton */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                    </div>
+                    {/* Chart Skeleton */}
+                    <Skeleton className="h-80 w-full" />
+                    {/* Activity Skeleton */}
+                    <Skeleton className="h-96 w-full" />
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
@@ -31,14 +77,21 @@ export default function DashboardPage() {
   const loading = userLoading || profileLoading;
 
   // Protect the route for creators only
-  if (!loading && (!user || userProfile?.role !== 'createur')) {
-      router.replace('/discover');
-      return <div className="flex h-screen items-center justify-center">Accès non autorisé. Redirection...</div>;
-  }
-  
-  // You can show a loading skeleton here
-  if (loading) {
-    return <div className="flex h-screen items-center justify-center">Chargement du tableau de bord...</div>;
+  // and redirect if profile doesn't exist
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace('/login');
+      } else if (!userProfileDoc?.exists()) {
+        router.replace('/complete-profile');
+      } else if (userProfile?.role !== 'createur') {
+        router.replace('/discover');
+      }
+    }
+  }, [loading, user, userProfile, userProfileDoc, router]);
+
+  if (loading || userProfile?.role !== 'createur') {
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -74,7 +127,7 @@ export default function DashboardPage() {
             />
           </div>
           <RevenueChart />
-          <RecentActivity />
+          <RecentActivity userId={user.uid} />
         </div>
       </div>
     </div>

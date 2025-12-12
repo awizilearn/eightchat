@@ -12,45 +12,16 @@ import {
   HeartHandshake,
   MinusCircle,
   PlusCircle,
+  Activity,
 } from 'lucide-react';
 import type { Transaction } from '@/lib/chat-data';
 import { cn } from '@/lib/utils';
-
-// Mock data, in a real app this would come from a Firestore query
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'sub',
-    description: 'New Sub: @john_doe',
-    date: 'Today, 2:30 PM',
-    method: 'Stripe',
-    amount: 15.0,
-  },
-  {
-    id: '2',
-    type: 'payout',
-    description: 'Payout to Coinbase',
-    date: 'Yesterday, 9:00 AM',
-    method: 'ETH',
-    amount: -2500.0,
-  },
-  {
-    id: '3',
-    type: 'tip',
-    description: 'Tip from @sarah_design',
-    date: 'Oct 24, 4:15 PM',
-    method: 'Stripe',
-    amount: 50.0,
-  },
-  {
-    id: '4',
-    type: 'sub',
-    description: 'New Sub: @cryptofan',
-    date: 'Oct 23, 11:30 AM',
-    method: 'Crypto',
-    amount: 15.0,
-  },
-];
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { useMemo } from 'react';
+import { Skeleton } from '../ui/skeleton';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const ICONS: { [key in Transaction['type']]: React.ReactNode } = {
   sub: <UserPlus className="h-5 w-5" />,
@@ -79,7 +50,10 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
       <div className="flex-grow">
         <p className="font-semibold">{transaction.description}</p>
         <p className="text-sm text-muted-foreground">
-          {transaction.date} &bull; {transaction.method}
+          {transaction.date instanceof Timestamp
+            ? formatDistanceToNow(transaction.date.toDate(), { addSuffix: true, locale: fr })
+            : String(transaction.date)}{' '}
+          &bull; {transaction.method}
         </p>
       </div>
       <div
@@ -102,7 +76,43 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
   );
 }
 
-export function RecentActivity() {
+function ActivitySkeleton() {
+    return (
+        <ul className="divide-y divide-border">
+            {[...Array(4)].map((_, i) => (
+                <li key={i} className="flex items-center gap-4 py-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex-grow space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="h-6 w-20" />
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+export function RecentActivity({ userId }: { userId: string }) {
+  const firestore = useFirestore();
+
+  const transactionsQuery = useMemo(() => {
+    if (!firestore || !userId) return null;
+    return query(
+        collection(firestore, 'transactions'), 
+        where('userId', '==', userId),
+        orderBy('date', 'desc')
+    );
+  }, [firestore, userId]);
+
+  const { data: transactionsData, loading } = useCollection(transactionsQuery);
+
+  const transactions = useMemo(() => {
+    if (!transactionsData) return [];
+    return transactionsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+  }, [transactionsData]);
+
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
@@ -110,11 +120,21 @@ export function RecentActivity() {
         <Button variant="link">View All</Button>
       </CardHeader>
       <CardContent>
-        <ul className="divide-y divide-border">
-          {mockTransactions.map((tx) => (
-            <TransactionItem key={tx.id} transaction={tx} />
-          ))}
-        </ul>
+        {loading ? (
+            <ActivitySkeleton />
+        ) : transactions.length > 0 ? (
+            <ul className="divide-y divide-border">
+            {transactions.map((tx) => (
+                <TransactionItem key={tx.id} transaction={tx} />
+            ))}
+            </ul>
+        ) : (
+            <div className="flex flex-col items-center justify-center h-40 text-center gap-2 border-dashed border-2 rounded-lg">
+                <Activity className="h-8 w-8 text-muted-foreground" />
+                <p className="text-muted-foreground">Aucune activité récente à afficher.</p>
+                <p className="text-xs text-muted-foreground/80">Les nouvelles transactions apparaîtront ici.</p>
+            </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -67,9 +67,10 @@ export interface ModerationAction {
 
 export interface Transaction {
     id: string;
+    userId: string;
     type: 'sub' | 'payout' | 'tip';
     description: string;
-    date: string;
+    date: Timestamp;
     method: 'Stripe' | 'ETH' | 'Crypto';
     amount: number;
     status?: 'completed' | 'pending';
