@@ -105,7 +105,7 @@ function UserMenu() {
               <span>Tableau de bord</span>
             </DropdownMenuItem>
            )}
-          <DropdownMenuItem onClick={() => router.push('/chat')}>
+          <DropdownMenuItem onClick={() => router.push('/messages')}>
             <MessageSquare className="mr-2 h-4 w-4" />
             <span>Messages</span>
           </DropdownMenuItem>
@@ -116,7 +116,7 @@ function UserMenu() {
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Mon Profil</span>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem onClick={() => router.push('/settings')}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Paramètres</span>
           </DropdownMenuItem>
@@ -126,7 +126,7 @@ function UserMenu() {
             <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push('/moderation')}>
+                    <DropdownMenuItem onClick={() => router.push('/admin')}>
                         <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
                         <span className='text-primary'>Modération</span>
                     </DropdownMenuItem>
