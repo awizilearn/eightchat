@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SubscriptionTierCard } from '@/components/creators/subscription-tier-card';
 import { ContentCard } from '@/components/creators/content-card';
 import { Separator } from '@/components/ui/separator';
-import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import {
   collection,
   query,
@@ -22,7 +22,6 @@ import {
 import type { Conversation, UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
-import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3VudGFpbnN8ZW58MHx8fHwxNzY1MzkxOTk3fDA&ixlib=rb-4.1.0&q=80&w=1080';
 
@@ -75,16 +74,6 @@ export default function CreatorProfilePage({
   const { data: currentUserDoc, loading: userLoading } = useDoc(currentUserRef);
   const currentUserProfile = currentUserDoc?.data() as UserProfile | undefined;
 
-  // Fetch current user's conversations to check for existing one
-  const conversationsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-      collection(firestore, 'conversations'),
-      where('participantIds', 'array-contains', user.uid)
-    );
-  }, [firestore, user]);
-  const { data: conversationsData } = useCollection(conversationsQuery);
-
   const isSubscribed = useMemo(() => {
     if (!currentUserProfile || !currentUserProfile.subscriptions) return false;
     return currentUserProfile.subscriptions.includes(params.id);
@@ -103,37 +92,34 @@ export default function CreatorProfilePage({
   const handleMessageCreator = async () => {
     if (!user || !firestore || !creator) return;
 
-    // Check if a 1-on-1 conversation already exists in the loaded conversations
-    let existingConversationId: string | null = null;
-    if (conversationsData) {
-        for (const doc of conversationsData.docs) {
-            const convo = doc.data() as Conversation;
-            const participants = convo.participantIds;
-            if (participants.length === 2 && participants.includes(user.uid) && participants.includes(params.id)) {
-                existingConversationId = doc.id;
-                break;
-            }
-        }
-    }
-    
-    if (existingConversationId) {
-        router.push(`/chat?conversationId=${existingConversationId}`);
-        return;
-    }
+    // More efficient query to find if a conversation already exists
+    const conversationsRef = collection(firestore, 'conversations');
+    const q = query(
+      conversationsRef,
+      where('participantIds', '==', [user.uid, params.id].sort())
+    );
 
-    // If no existing conversation, create a new one
-    try {
-        const conversationsRef = collection(firestore, 'conversations');
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      // Conversation already exists
+      const conversationId = querySnapshot.docs[0].id;
+      router.push(`/chat?conversationId=${conversationId}`);
+    } else {
+      // No existing conversation, create a new one
+      try {
         const newConversation = await addDoc(conversationsRef, {
-            participantIds: [user.uid, params.id],
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            lastMessage: '',
+          // Sort participant IDs to ensure query consistency
+          participantIds: [user.uid, params.id].sort(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: '',
         });
         router.push(`/chat?conversationId=${newConversation.id}`);
-    } catch (error) {
+      } catch (error) {
         console.error('Error creating conversation:', error);
         // Optionally, show a toast to the user
+      }
     }
   };
 
