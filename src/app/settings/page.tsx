@@ -17,8 +17,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { signOut } from 'firebase/auth';
 
 function BitcoinIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -33,13 +35,15 @@ const SettingsItem = ({
   title,
   subtitle,
   action,
+  onClick,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   action: React.ReactNode;
+  onClick?: () => void;
 }) => (
-  <div className="flex items-center gap-4 py-3">
+  <div className="flex items-center gap-4 py-3 cursor-pointer" onClick={onClick}>
     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card">
       {icon}
     </div>
@@ -54,6 +58,27 @@ const SettingsItem = ({
 export default function SettingsPage() {
   const router = useRouter();
   const { user } = useUser();
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      toast({ title: 'Déconnexion réussie' });
+      router.push('/login');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de déconnexion',
+        description: 'Une erreur est survenue lors de la déconnexion.',
+      });
+    }
+  };
+
+  const showToast = (title: string, description: string) => {
+    toast({ title, description });
+  };
 
   return (
     <div className="bg-background min-h-screen text-foreground">
@@ -95,7 +120,7 @@ export default function SettingsPage() {
                     <p className="font-semibold">Coinbase Commerce</p>
                     <Badge variant="outline" className="border-green-500/50 bg-green-500/20 text-green-400 mt-1 font-normal">Connected</Badge>
                  </div>
-                 <Button variant="secondary" size="sm">Manage</Button>
+                 <Button variant="secondary" size="sm" onClick={() => showToast('Gestion du portefeuille', 'La gestion de Coinbase Commerce sera bientôt disponible.')}>Manage</Button>
               </div>
               <div className="flex items-center gap-4 py-3">
                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#6772E5] text-white">
@@ -105,7 +130,7 @@ export default function SettingsPage() {
                     <p className="font-semibold">Stripe</p>
                     <p className="text-sm text-muted-foreground">Not connected</p>
                  </div>
-                 <Button size="sm">Connect</Button>
+                 <Button size="sm" onClick={() => showToast('Connexion à Stripe', 'La connexion à Stripe sera bientôt disponible.')}>Connect</Button>
               </div>
             </CardContent>
           </Card>
@@ -147,7 +172,7 @@ export default function SettingsPage() {
                 </div>
             </CardContent>
           </Card>
-          <Button variant="secondary" className="w-full mt-4">Find More Creators</Button>
+          <Button variant="secondary" className="w-full mt-4" onClick={() => router.push('/discover')}>Find More Creators</Button>
         </section>
 
          <section>
@@ -156,9 +181,25 @@ export default function SettingsPage() {
           </h3>
           <Card>
             <CardContent className="p-3 divide-y divide-border">
-                <SettingsItem icon={<KeyRound/>} title="Signal Protocol Keys" subtitle="Last updated 2 days ago" action={<Button variant="secondary" size="sm">Regenerate</Button>} />
-                <SettingsItem icon={<MessageSquare/>} title="Direct Messages" subtitle="Subscribers only" action={<ChevronRight className="text-muted-foreground" />} />
-                <SettingsItem icon={<ShieldCheck/>} title="2FA Authentication" subtitle="" action={<Switch defaultChecked={true}/>} />
+                <SettingsItem 
+                    icon={<KeyRound/>} 
+                    title="Signal Protocol Keys" 
+                    subtitle="Last updated 2 days ago" 
+                    action={<Button variant="secondary" size="sm" onClick={() => showToast('Régénération des clés', 'Vos clés Signal ont été régénérées avec succès.')}>Regenerate</Button>} 
+                />
+                <SettingsItem 
+                    icon={<MessageSquare/>} 
+                    title="Direct Messages" 
+                    subtitle="Subscribers only" 
+                    action={<ChevronRight className="text-muted-foreground" />} 
+                    onClick={() => showToast('Paramètres des messages', 'Les paramètres des messages directs seront bientôt disponibles.')}
+                />
+                <SettingsItem 
+                    icon={<ShieldCheck/>} 
+                    title="2FA Authentication" 
+                    subtitle="" 
+                    action={<Switch defaultChecked={true}/>} 
+                />
             </CardContent>
           </Card>
         </section>
@@ -169,16 +210,34 @@ export default function SettingsPage() {
           </h3>
           <Card>
             <CardContent className="p-3 divide-y divide-border">
-                <SettingsItem icon={<Bell/>} title="Notifications" subtitle="" action={<ChevronRight className="text-muted-foreground" />} />
-                <SettingsItem icon={<Palette/>} title="Display & Appearance" subtitle="" action={<ChevronRight className="text-muted-foreground" />} />
-                <SettingsItem icon={<Globe/>} title="Language" subtitle="English (US)" action={<ChevronRight className="text-muted-foreground" />} />
+                <SettingsItem 
+                    icon={<Bell/>} 
+                    title="Notifications" 
+                    subtitle="" 
+                    action={<ChevronRight className="text-muted-foreground" />} 
+                    onClick={() => showToast('Paramètres des notifications', 'Les paramètres des notifications seront bientôt disponibles.')}
+                />
+                <SettingsItem 
+                    icon={<Palette/>} 
+                    title="Display & Appearance" 
+                    subtitle="" 
+                    action={<ChevronRight className="text-muted-foreground" />} 
+                    onClick={() => showToast('Paramètres d\'affichage', 'Les paramètres d\'affichage seront bientôt disponibles.')}
+                />
+                <SettingsItem 
+                    icon={<Globe/>} 
+                    title="Language" 
+                    subtitle="English (US)" 
+                    action={<ChevronRight className="text-muted-foreground" />} 
+                    onClick={() => showToast('Paramètres de langue', 'Les paramètres de langue seront bientôt disponibles.')}
+                />
             </CardContent>
           </Card>
         </section>
 
         <section className="text-center space-y-4 pt-4">
-            <Button variant="secondary" className="w-full max-w-sm">Log Out</Button>
-            <Button variant="link" className="text-destructive text-sm">Delete Account</Button>
+            <Button variant="secondary" className="w-full max-w-sm" onClick={handleLogout}>Log Out</Button>
+            <Button variant="link" className="text-destructive text-sm" onClick={() => showToast('Suppression du compte', 'La fonction de suppression du compte sera bientôt disponible.',)}>Delete Account</Button>
             <p className="text-xs text-muted-foreground">Version 3.4.1 (Build 209)</p>
         </section>
       </main>

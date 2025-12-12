@@ -110,8 +110,7 @@ function UserMenu() {
             <span>Messages</span>
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => isCreator && router.push(`/creators/${user.uid}`)}
-            disabled={!isCreator}
+            onClick={() => router.push(`/creators/${user.uid}`)}
           >
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Mon Profil</span>
