@@ -19,14 +19,13 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
-import type { ModerationAction, UserProfile } from '@/lib/chat-data';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import type { ModerationAction } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
 
 type ActionStatus = 'All Actions' | 'Approved' | 'Rejected' | 'Warnings' | 'Banned' | 'Muted';
 type DateRange = '24hours' | '7days' | '30days' | 'all';
@@ -91,21 +90,13 @@ function ModerationItem({ action }: { action: ModerationAction & {id: string} })
     );
 }
 
-export default function ModerationPage() {
-    const { user, loading: userLoading } = useUser();
+export default function ContentModerationPage() {
     const firestore = useFirestore();
     const router = useRouter();
 
     const [activeTab, setActiveTab] = useState<ActionStatus>('All Actions');
     const [dateRange, setDateRange] = useState<DateRange>('7days');
     const [selectedModerator, setSelectedModerator] = useState<string>('all');
-
-    const userProfileRef = useMemo(() => {
-        if (!user || !firestore) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [user, firestore]);
-    const { data: userProfileDoc, loading: profileLoading } = useDoc(userProfileRef);
-    const userProfile = userProfileDoc?.data() as UserProfile;
 
     const moderationQuery = useMemo(() => {
         if (!firestore) return null;
@@ -139,45 +130,6 @@ export default function ModerationPage() {
       });
     }, [actions, activeTab, dateRange, selectedModerator]);
 
-    const loading = userLoading || profileLoading;
-
-    if (!loading && (!user || (userProfile && !['admin', 'moderateur'].includes(userProfile.role)))) {
-        router.replace('/discover');
-        return <div className="flex h-screen items-center justify-center">Accès non autorisé. Redirection...</div>;
-    }
-
-    if (loading) {
-        return (
-            <div className="bg-background min-h-screen text-foreground">
-                <header className="p-4 flex items-center justify-between border-b border-border">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon">
-                            <ChevronLeft />
-                        </Button>
-                        <h1 className="font-semibold text-lg">Moderation</h1>
-                    </div>
-                    <Button variant="ghost" size="icon">
-                        <MoreVertical />
-                    </Button>
-                </header>
-                <main className="p-4">
-                     <Skeleton className="h-10 w-64 mb-6" />
-                     <div className="space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                            <div key={i} className="flex items-start gap-4">
-                                <Skeleton className="h-10 w-10 rounded-full" />
-                                <div className="flex-grow space-y-2">
-                                    <Skeleton className="h-4 w-1/3" />
-                                    <Skeleton className="h-4 w-2/3" />
-                                    <Skeleton className="h-3 w-1/2" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </main>
-            </div>
-        );
-    }
     
     return (
         <div className="bg-background min-h-screen text-foreground">
@@ -186,16 +138,16 @@ export default function ModerationPage() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ChevronLeft />
                     </Button>
-                    <h1 className="font-semibold text-lg">Moderation</h1>
+                    <h1 className="font-semibold text-lg">Content Moderation</h1>
                 </div>
                 <Button variant="ghost" size="icon">
                     <MoreVertical />
                 </Button>
             </header>
 
-            <main className="p-4">
+            <main className="p-4 pb-24">
                 <h2 className="font-headline text-3xl font-bold text-primary mb-6">
-                    Notifications de Modération
+                    Moderation Feed
                 </h2>
 
                 <div className="space-y-4 mb-6">
@@ -217,28 +169,28 @@ export default function ModerationPage() {
                             <DropdownMenuTrigger asChild>
                                 <Button variant="secondary" className="flex-1">
                                     <Calendar className="mr-2 h-4 w-4" />
-                                    {dateRange === '24hours' && '24 dernières heures'}
-                                    {dateRange === '7days' && '7 derniers jours'}
-                                    {dateRange === '30days' && '30 derniers jours'}
-                                    {dateRange === 'all' && 'Toute la période'}
+                                    {dateRange === '24hours' && 'Last 24h'}
+                                    {dateRange === '7days' && 'Last 7 days'}
+                                    {dateRange === '30days' && 'Last 30 days'}
+                                    {dateRange === 'all' && 'All time'}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setDateRange('24hours')}>24 dernières heures</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setDateRange('7days')}>7 derniers jours</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setDateRange('30days')}>30 derniers jours</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setDateRange('all')}>Toute la période</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('24hours')}>Last 24 hours</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('7days')}>Last 7 days</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('30days')}>Last 30 days</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDateRange('all')}>All time</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="secondary" className="flex-1">
                                     <Users className="mr-2 h-4 w-4" />
-                                    {selectedModerator === 'all' ? 'Tous les modérateurs' : selectedModerator.substring(0, 8)}
+                                    {selectedModerator === 'all' ? 'All moderators' : selectedModerator.substring(0, 8)}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setSelectedModerator('all')}>Tous les modérateurs</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSelectedModerator('all')}>All moderators</DropdownMenuItem>
                                 {uniqueModerators.map(modId => (
                                    <DropdownMenuItem key={modId} onClick={() => setSelectedModerator(modId)}>
                                         {modId.substring(0, 8)}...
