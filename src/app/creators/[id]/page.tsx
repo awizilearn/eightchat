@@ -66,11 +66,18 @@ export default function CreatorProfilePage({
   const { user } = useUser();
   const firestore = useFirestore();
   
-  const creatorRef = doc(firestore, 'users', params.id);
+  const creatorRef = useMemo(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'users', params.id);
+  }, [firestore, params.id]);
+  
   const { data: creatorDoc, loading: creatorLoading } = useDoc(creatorRef);
   const creator = creatorDoc?.data() as UserProfile | undefined;
 
-  const currentUserRef = user ? doc(firestore, 'users', user.uid) : null;
+  const currentUserRef = useMemo(() => {
+      if (!user || !firestore) return null;
+      return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
   const { data: currentUserDoc, loading: userLoading } = useDoc(currentUserRef);
   const currentUserProfile = currentUserDoc?.data() as UserProfile | undefined;
 
