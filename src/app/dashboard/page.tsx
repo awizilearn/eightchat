@@ -99,14 +99,15 @@ export default function DashboardPage() {
       if (!user) {
         router.replace('/login');
       } else if (!userProfileDoc?.exists()) {
-        router.replace('/complete-profile');
+        // This case should be rare with the new signup flow
+        router.replace('/home');
       } else if (userProfile?.role !== 'createur') {
         router.replace('/discover');
       }
     }
   }, [loading, user, userProfile, userProfileDoc, router]);
 
-  if (loading || !user || userProfile?.role !== 'createur') {
+  if (loading || !user || !userProfileDoc?.exists() || userProfile?.role !== 'createur') {
     return <DashboardSkeleton />;
   }
 

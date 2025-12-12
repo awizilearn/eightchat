@@ -16,7 +16,6 @@ export function middleware(request: NextRequest) {
   const publicPaths = ['/login', '/signup', '/'];
   const isPublicPath = publicPaths.includes(pathname);
 
-
   // This cookie is set by Firebase Auth on the client side
   const authCookie = request.cookies.get('firebaseAuth');
 
