@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   }
     
   const publicPaths = ['/login', '/complete-profile', '/'];
-  const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
+  const isPublicPath = publicPaths.some((path) => pathname === path);
 
   // This cookie is set by Firebase Auth on the client side
   const authCookie = request.cookies.get('firebaseAuth');
@@ -24,10 +24,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  if (authCookie && (pathname === '/' || pathname === '/login' || (pathname === '/complete-profile' && !request.nextUrl.searchParams.get('new-user')))) {
+  // If user is logged in and tries to access home, login, or non-new-user complete-profile, redirect to discover.
+  if (authCookie && (pathname === '/' || pathname === '/login' || (pathname === '/complete-profile' && !request.nextUrl.searchParams.has('new-user')))) {
      return NextResponse.redirect(new URL('/discover', request.url));
   }
-
 
   return NextResponse.next();
 }

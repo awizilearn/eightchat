@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/card';
 import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { firebaseConfig } from '@/firebase/config';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -50,14 +49,17 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // We only want to check the user profile if we are not loading, we have a user, AND firestore is ready.
+    // This logic runs after a user signs in successfully.
+    // The middleware handles redirecting already-logged-in users.
     if (!loading && user && firestore) {
       const checkUserProfile = async () => {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
+          // Profile complete, go to discover
           router.push('/discover');
         } else {
+          // New user, go to complete profile
           router.push('/complete-profile?new-user=true');
         }
       };
@@ -75,6 +77,9 @@ export default function LoginPage() {
     }
   };
 
+  // The middleware redirects logged-in users, so if we're here and loading,
+  // it means we're waiting for the auth state to confirm the user is NOT logged in.
+  // Or, if the user just signed in, we're waiting for the useEffect to redirect them.
   if (loading || user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -83,6 +88,7 @@ export default function LoginPage() {
     );
   }
 
+  // This UI is only shown to users who are confirmed to be not logged in.
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-background px-4">
       <div className="flex items-center gap-2 mb-8">
@@ -109,7 +115,7 @@ export default function LoginPage() {
           </Button>
           <div className="text-center text-sm text-muted-foreground">
              <p>Already have an account?{' '}
-                <button onClick={() => router.push('/')} className="text-primary hover:underline">
+                <button onClick={handleSignIn} className="text-primary hover:underline">
                     Sign In
                 </button>
             </p>
