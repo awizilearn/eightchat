@@ -11,10 +11,10 @@ import {
   Heart,
   Lock
 } from 'lucide-react';
-import type { Transaction } from '@/lib/chat-data';
+import type { Transaction, UserProfile } from '@/lib/chat-data';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { collection, query, where, orderBy, Timestamp, doc } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '../ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,53 +28,49 @@ function BitcoinIcon(props: React.SVGProps<SVGSVGElement>) {
     )
 }
 
-const activities = [
-    {
-        type: 'sub',
-        icon: <BitcoinIcon className="h-5 w-5 text-orange-400" />,
-        iconBg: 'bg-orange-400/20',
-        description: "CryptoKing subscribed",
-        details: "Via Coinbase • 2m ago",
-        amount: "+$20.00",
-        subAmount: "0.008 ETH"
-    },
-    {
-        type: 'tip',
-        icon: <Heart className="h-5 w-5 text-purple-400" />,
-        iconBg: 'bg-purple-400/20',
-        description: "SarahJ sent a tip",
-        details: "One-time Tip • 1h ago",
-        amount: "+$50.00",
-    },
-    {
-        type: 'unlock',
-        icon: <Lock className="h-5 w-5 text-yellow-400" />,
-        iconBg: 'bg-yellow-500/20',
-        description: "Mike unlocked video",
-        details: "Exclusive Content • 3h ago",
-        amount: "+$15.00",
-    }
-]
+const ICONS: Record<Transaction['type'], { icon: React.ReactNode, bg: string }> = {
+    sub: { icon: <UserPlus className="h-5 w-5 text-green-400" />, bg: 'bg-green-500/20' },
+    tip: { icon: <Heart className="h-5 w-5 text-purple-400" />, bg: 'bg-purple-400/20' },
+    payout: { icon: <BitcoinIcon className="h-5 w-5 text-orange-400" />, bg: 'bg-orange-400/20' },
+};
 
 
-function TransactionItem({ activity }: { activity: typeof activities[0] }) {
+function TransactionItem({ tx }: { tx: Transaction & { id: string } }) {
+  const { icon, bg } = ICONS[tx.type] || { icon: <Heart />, bg: 'bg-gray-500/20' };
+  
+  // To get subscriber name, we need to fetch the user profile
+  const firestore = useFirestore();
+  const subscriberRef = useMemo(() => {
+    if (!firestore || !tx.subscriberId) return null;
+    return doc(firestore, 'users', tx.subscriberId);
+  }, [firestore, tx.subscriberId]);
+  const { data: subscriberDoc, loading } = useDoc(subscriberRef);
+  const subscriber = subscriberDoc?.data() as UserProfile | undefined;
+
+  const description = loading ? '...' : (tx.description || `Abonnement de ${subscriber?.displayName || 'un utilisateur'}`);
+
   return (
     <li className="flex items-center gap-4 py-3">
       <div
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-          activity.iconBg
+          bg
         )}
       >
-        {activity.icon}
+        {icon}
       </div>
       <div className="flex-grow">
-        <p className="font-semibold">{activity.description}</p>
-        <p className="text-sm text-muted-foreground">{activity.details}</p>
+        <p className="font-semibold">{description}</p>
+        <p className="text-sm text-muted-foreground">
+            {tx.date instanceof Timestamp
+            ? formatDistanceToNow(tx.date.toDate(), { addSuffix: true, locale: fr })
+            : '...'}
+        </p>
       </div>
       <div className="text-right">
-        <p className="font-semibold text-primary">{activity.amount}</p>
-        {activity.subAmount && <p className="text-xs text-muted-foreground">{activity.subAmount}</p>}
+        <p className="font-semibold text-primary">
+            {tx.amount > 0 ? '+' : ''}${tx.amount.toFixed(2)}
+        </p>
       </div>
     </li>
   );
@@ -92,7 +88,6 @@ function ActivitySkeleton() {
                     </div>
                      <div className="text-right space-y-2">
                         <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-3 w-12 ml-auto" />
                     </div>
                 </li>
             ))}
@@ -101,18 +96,33 @@ function ActivitySkeleton() {
 }
 
 export function RecentActivity({ userId }: { userId: string }) {
-  // This is using mock data. In a real app, you would fetch transactions.
-  const loading = false;
+  const firestore = useFirestore();
+  
+  const transactionsQuery = useMemo(() => {
+    if (!firestore || !userId) return null;
+    return query(
+        collection(firestore, 'transactions'), 
+        where('creatorId', '==', userId),
+        orderBy('date', 'desc')
+    );
+  }, [firestore, userId]);
+  
+  const { data: transactionsData, loading } = useCollection(transactionsQuery);
+
+  const transactions = useMemo(() => {
+    if (!transactionsData) return [];
+    return transactionsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction & { id: string }));
+  }, [transactionsData]);
 
   return (
     <div className="space-y-4">
         <h2 className="text-lg font-semibold">Recent Activity</h2>
         {loading ? (
             <ActivitySkeleton />
-        ) : activities.length > 0 ? (
+        ) : transactions.length > 0 ? (
             <ul className="space-y-1">
-            {activities.map((tx, i) => (
-                <TransactionItem key={i} activity={tx} />
+            {transactions.map((tx) => (
+                <TransactionItem key={tx.id} tx={tx} />
             ))}
             </ul>
         ) : (

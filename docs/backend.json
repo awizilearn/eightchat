@@ -202,8 +202,7 @@
                     "format": "date-time"
                 },
                 "method": {
-                    "type": "string",
-                    "enum": ["Stripe", "ETH", "Crypto"]
+                    "type": "string"
                 },
                 "amount": {
                     "type": "number"
@@ -212,12 +211,16 @@
                     "type": "string",
                     "enum": ["completed", "pending"]
                 },
-                "userId": {
+                "subscriberId": {
                     "type": "string",
-                    "description": "The ID of the user related to this transaction."
+                    "description": "The ID of the user making the payment (the subscriber)."
+                },
+                 "creatorId": {
+                    "type": "string",
+                    "description": "The ID of the user receiving the payment (the creator)."
                 }
             },
-            "required": ["type", "description", "date", "method", "amount", "userId"]
+            "required": ["type", "description", "date", "method", "amount", "subscriberId", "creatorId"]
         }
     },
     "auth": {

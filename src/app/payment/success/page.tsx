@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { CheckCircle2, ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PaymentSuccessPage() {
@@ -19,29 +19,64 @@ export default function PaymentSuccessPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [creatorId, setCreatorId] = useState<string | null>(null);
+  const [tier, setTier] = useState<string | null>(null);
+
 
   useEffect(() => {
     const method = searchParams.get('method');
     const sessionId = searchParams.get('session_id');
     const chargeId = searchParams.get('charge_id');
-    const creatorId = searchParams.get('creatorId');
+    const creatorIdParam = searchParams.get('creatorId');
+    const tierParam = searchParams.get('tier');
 
     setPaymentMethod(method);
     setTransactionId(sessionId || chargeId);
+    setCreatorId(creatorIdParam);
+    setTier(tierParam);
     
-    if (user && firestore && creatorId) {
-      const updateUserSubscription = async () => {
+    if (user && firestore && creatorIdParam && tierParam) {
+      const updateUserAndLogTransaction = async () => {
         const userRef = doc(firestore, 'users', user.uid);
+        const creatorRef = doc(firestore, 'users', creatorIdParam);
+
         try {
           // Check if already subscribed to prevent duplicate operations
           const userDoc = await getDoc(userRef);
           const userData = userDoc.data();
-          const isAlreadySubscribed = userData?.subscriptions?.includes(creatorId);
+          const creatorDoc = await getDoc(creatorRef);
+          const creatorData = creatorDoc.data();
+
+          if (!creatorData || !creatorData.tiers) {
+              throw new Error("Creator or tier information not found.");
+          }
+
+          const tierInfo = creatorData.tiers.find((t: any) => t.name === tierParam);
+          if (!tierInfo) {
+              throw new Error("Tier details not found.");
+          }
+
+          const isAlreadySubscribed = userData?.subscriptions?.includes(creatorIdParam);
 
           if (!isAlreadySubscribed) {
+              // 1. Update user's subscriptions
               await updateDoc(userRef, {
-                subscriptions: arrayUnion(creatorId)
+                subscriptions: arrayUnion(creatorIdParam)
               });
+
+              // 2. Create a transaction document
+              const transactionsRef = collection(firestore, 'transactions');
+              await addDoc(transactionsRef, {
+                  subscriberId: user.uid,
+                  creatorId: creatorIdParam,
+                  type: 'sub',
+                  description: `Subscription to ${creatorData.displayName} - ${tierInfo.name} tier`,
+                  date: serverTimestamp(),
+                  method: method,
+                  amount: tierInfo.price,
+                  status: 'completed'
+              });
+
               toast({
                 title: "Abonnement activé !",
                 description: "Votre abonnement a été ajouté à votre profil."
@@ -49,7 +84,7 @@ export default function PaymentSuccessPage() {
           }
           setStatus('success');
         } catch (error) {
-          console.error("Failed to update subscription:", error);
+          console.error("Failed to update subscription or log transaction:", error);
           setStatus('error');
           toast({
             variant: "destructive",
@@ -59,12 +94,12 @@ export default function PaymentSuccessPage() {
         }
       };
 
-      updateUserSubscription();
+      updateUserAndLogTransaction();
     } else if (!user || !firestore) {
         // Wait for user and firestore to be available
         setStatus('loading');
     } else {
-        // If no creatorId, it's an error or different flow
+        // If no creatorId/tier, it's an error or different flow
         setStatus('error');
     }
 
@@ -122,7 +157,7 @@ export default function PaymentSuccessPage() {
           </div>
           <CardTitle className="mt-4 text-2xl font-bold">Paiement Réussi !</CardTitle>
           <CardDescription>
-            Votre transaction a été traitée avec succès.
+            Votre abonnement à {tier} pour {creatorId} est confirmé.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -141,10 +176,10 @@ export default function PaymentSuccessPage() {
           )}
           <Button
             className="w-full"
-            onClick={() => router.push('/discover')}
+            onClick={() => router.push(`/creators/${creatorId}`)}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retourner à la Découverte
+            Retourner au profil du créateur
           </Button>
         </CardContent>
       </Card>
