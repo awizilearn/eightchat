@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
   }
 
   // If user is logged in and tries to access a public path like login or signup, redirect to home.
-  if (authCookie && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
+  if (authCookie && (pathname === '/login' || pathname.startsWith('/signup') || pathname === '/')) {
      return NextResponse.redirect(new URL('/home', request.url));
   }
 
