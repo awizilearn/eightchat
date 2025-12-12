@@ -24,9 +24,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // If user is logged in and tries to access home, login, or non-new-user complete-profile, redirect to discover.
+  // If user is logged in and tries to access home, login, or non-new-user complete-profile, redirect to home.
   if (authCookie && (pathname === '/' || pathname === '/login' || (pathname === '/complete-profile' && !request.nextUrl.searchParams.has('new-user')))) {
-     return NextResponse.redirect(new URL('/discover', request.url));
+     return NextResponse.redirect(new URL('/home', request.url));
   }
 
   return NextResponse.next();
