@@ -1,10 +1,22 @@
 {
   "placeholderImages": [
     {
-      "id": "onboarding-image",
-      "description": "Abstract geometric art with gold and black shapes",
-      "imageUrl": "https://images.unsplash.com/photo-1632283010141-3310a0a55e2e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGdvbGQlMjBhcnR8ZW58MHx8fHwxNzY1MzMyNDQxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract art"
+      "id": "onboarding-image-1",
+      "description": "Abstract golden lock symbolizing exclusivity and security",
+      "imageUrl": "https://images.unsplash.com/photo-1599023409024-a7a28b04f378?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxnb2xkZW4lMjBsb2NrfGVufDB8fHx8MTc2NTU1ODk4M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "golden lock"
+    },
+    {
+      "id": "onboarding-image-2",
+      "description": "Abstract representation of secure digital communication",
+      "imageUrl": "https://images.unsplash.com/photo-1614064548237-02f0d1a2f333?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxlbmNyeXB0ZWQlMjBtZXNzYWdpbmd8ZW58MHx8fHwxNzY1NTU5MDMyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "encrypted messaging"
+    },
+    {
+      "id": "onboarding-image-3",
+      "description": "Hands holding a glowing heart, symbolizing support for creators",
+      "imageUrl": "https://images.unsplash.com/photo-1608244496229-ec0a542b4352?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzdXBwb3J0JTIwY3JlYXRvcnN8ZW58MHx8fHwxNzY1NTU5MDMyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "support creators"
     },
     {
       "id": "creator-1-avatar",

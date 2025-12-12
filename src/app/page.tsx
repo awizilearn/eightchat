@@ -1,107 +1,149 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { CreatorCard } from '@/components/creators/creator-card';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
-import { useMemo } from 'react';
-import type { UserProfile } from '@/lib/chat-data';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldCheck } from 'lucide-react';
+import { useUser } from '@/firebase';
+import Image from 'next/image';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from '@/components/ui/carousel';
+import React from 'react';
+import { cn } from '@/lib/utils';
+import placeholderImages from '@/lib/placeholder-images.json';
 
-function CreatorsShowcase() {
-    const firestore = useFirestore();
-
-    const creatorsQuery = useMemo(() => {
-        if (!firestore) return null;
-        // Fetch a limited number of creators for the showcase
-        return query(collection(firestore, 'users'), where('role', '==', 'createur'), limit(1));
-    }, [firestore]);
-
-    const { data: creatorsData, loading } = useCollection(creatorsQuery);
-
-    const creators = useMemo(() => {
-        if (!creatorsData) return [];
-        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
-    }, [creatorsData]);
-
-    if (loading) {
-        return (
-            <div className="my-8 w-full max-w-sm">
-               <div className="flex flex-col space-y-4 rounded-xl border bg-card text-card-foreground shadow">
-                    <Skeleton className="h-40 w-full" />
-                    <div className="flex items-end space-x-4 px-4">
-                        <Skeleton className="h-20 w-20 -mt-10 border-4 border-card rounded-full" />
-                        <div className="space-y-2 pb-2">
-                            <Skeleton className="h-5 w-[150px]" />
-                            <Skeleton className="h-4 w-[100px]" />
-                        </div>
-                    </div>
-                     <div className="px-4 pb-4 space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-3/4" />
-                     </div>
-                </div>
-            </div>
-        );
-    }
-    
-    if (creators.length === 0) {
-        return null; // Don't show anything if no creators are found
-    }
-
-    return (
-        <div className="my-8 w-full max-w-sm">
-            {creators.map((creator) => (
-                 <CreatorCard key={creator.id} creator={creator} />
-            ))}
-        </div>
-    );
-}
-
+const onboardingSteps = [
+  {
+    icon: <ShieldCheck className="h-10 w-10 text-primary" />,
+    title: 'Unlock Exclusive Worlds',
+    description:
+      'Subscribe directly to your favorite creators for premium, unseen content.',
+    image: placeholderImages.placeholderImages.find(p => p.id === 'onboarding-image-1'),
+  },
+  {
+    icon: <MessageSquare className="h-10 w-10 text-primary" />,
+    title: 'Encrypted Messaging',
+    description:
+      'Chat securely with creators and fans using end-to-end encryption.',
+    image: placeholderImages.placeholderImages.find(p => p.id === 'onboarding-image-2'),
+  },
+  {
+    icon: <Star className="h-10 w-10 text-primary" />,
+    title: 'Support Creators',
+    description: 'Your subscription directly supports the artists and creators you love.',
+    image: placeholderImages.placeholderImages.find(p => p.id === 'onboarding-image-3'),
+  },
+];
 
 export default function WelcomePage() {
   const router = useRouter();
+  const { user, loading } = useUser();
+  const [api, setApi] = React.useState<CarouselApi>();
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  if (loading) {
+    return <div className="flex h-screen w-full items-center justify-center bg-background">Loading...</div>
+  }
+  
+  if (user) {
+    router.replace('/home');
+    return <div className="flex h-screen w-full items-center justify-center bg-background">Redirecting...</div>
+  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-6">
-      <main className="flex w-full max-w-4xl flex-col items-center text-center">
-        <ShieldCheck className="h-10 w-10 text-primary" />
+    <div className="flex min-h-screen flex-col items-center justify-between bg-background p-4 sm:p-6">
+      <div className="w-full max-w-md text-right">
+        <Button variant="link" className="text-muted-foreground" onClick={() => router.push('/login')}>SKIP</Button>
+      </div>
+
+      <main className="flex w-full max-w-md flex-col items-center text-center">
+        <Carousel setApi={setApi} className="w-full">
+          <CarouselContent>
+            {onboardingSteps.map((step, index) => (
+              <CarouselItem key={index}>
+                <div className="p-1">
+                  <Card className="bg-transparent border-none shadow-none">
+                    <CardContent className="flex flex-col items-center justify-center p-0 gap-8">
+                       <div className="relative w-full aspect-[4/3] max-w-sm overflow-hidden rounded-xl">
+                         {step.image && (
+                           <Image
+                            src={step.image.imageUrl}
+                            alt={step.title}
+                            fill
+                            className="object-cover"
+                            data-ai-hint={step.image.imageHint}
+                          />
+                         )}
+                       </div>
+                       <div className="space-y-2">
+                        <h1 className="font-headline text-4xl font-bold leading-tight tracking-tight">
+                            {step.title}
+                        </h1>
+                        <p className="max-w-xs text-base text-muted-foreground">
+                            {step.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+
+        <div className="py-4 flex justify-center gap-2">
+            {Array.from({ length: count }).map((_, i) => (
+              <div
+                key={i}
+                className={cn('h-2 w-2 rounded-full transition-all', current === i ? 'bg-primary w-4' : 'bg-border')}
+              />
+            ))}
+        </div>
         
-        <h1 className="mt-4 font-headline text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-          Unlock Exclusive Worlds
-        </h1>
-        <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-          Access premium content from your favorite creators. Subscribe securely
-          with Stripe or Crypto and connect with end-to-end encrypted
-          messaging.
-        </p>
-
-        <CreatorsShowcase />
-
-        <div className="mt-4 flex w-full max-w-md flex-col gap-4">
+        <div className="mt-8 flex w-full flex-col gap-4">
           <Button
             size="lg"
             className="h-12 text-base"
+            onClick={() => api?.scrollNext()}
+            disabled={current === count - 1}
+          >
+            NEXT
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+          
+          <Button
+            size="lg"
+            className={cn("h-12 text-base", current === count - 1 ? "flex" : "hidden")}
             onClick={() => router.push('/signup')}
           >
             Get Started
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          <Button
-            variant="link"
-            className="text-sm text-muted-foreground"
-            onClick={() => router.push('/login')}
-          >
-            Already have an account? Log In
           </Button>
         </div>
       </main>
+
       <footer className="mt-12 text-center text-xs text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
+        <p>Already have an account? <Link href="/login" className="font-semibold text-primary hover:underline">Log in</Link></p>
       </footer>
     </div>
   );

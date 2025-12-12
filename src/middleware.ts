@@ -13,7 +13,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
     
-  const publicPaths = ['/login', '/signup', '/', '/admin'];
+  // Public paths are the onboarding/welcome page, login, and signup flow.
+  const publicPaths = ['/', '/login', '/signup'];
   const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
 
   // This cookie is set by Firebase Auth on the client side
@@ -21,12 +22,17 @@ export function middleware(request: NextRequest) {
 
   if (!authCookie && !isPublicPath) {
      // if the path is not public and there is no auth cookie, redirect to login.
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // If user is logged in and tries to access a public path like login or signup, redirect to home.
-  if (authCookie && (pathname === '/login' || pathname.startsWith('/signup') || pathname === '/')) {
+  if (authCookie && isPublicPath) {
      return NextResponse.redirect(new URL('/home', request.url));
+  }
+
+  // Allow admin users to access the /admin route
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();
