@@ -70,7 +70,7 @@ export default function CompleteProfilePage() {
         email: user.email,
         photoURL: user.photoURL,
         role: selectedRole,
-        signalPreKeyBundle: serializedPreKeyBundle,
+        signalPreKeyBundle: serializedPreKeyBundle, // This is now JSON-safe
       });
 
       router.push('/');
