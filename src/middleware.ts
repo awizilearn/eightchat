@@ -21,8 +21,8 @@ export function middleware(request: NextRequest) {
   const authCookie = request.cookies.get('firebaseAuth');
 
   if (!authCookie && !isPublicPath) {
-     // if the path is not public and there is no auth cookie, redirect to home.
-    return NextResponse.redirect(new URL('/', request.url));
+     // if the path is not public and there is no auth cookie, redirect to login.
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // If user is logged in and tries to access a public path, redirect to home.
