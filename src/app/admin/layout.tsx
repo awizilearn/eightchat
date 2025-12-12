@@ -1,5 +1,5 @@
 'use client';
-import { LayoutGrid, Users, Shield, UserCircle } from 'lucide-react';
+import { BarChart, Users, Shield, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ import type { UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const navItems = [
-  { href: '/admin', icon: LayoutGrid, label: 'Dashboard' },
+  { href: '/admin', icon: BarChart, label: 'Dashboard' },
   { href: '/admin/users', icon: Users, label: 'Users' },
   { href: '/admin/content', icon: Shield, label: 'Content' },
   { href: '/admin/profile', icon: UserCircle, label: 'Profile' },
@@ -103,3 +103,5 @@ export default function AdminLayout({
     </div>
   );
 }
+
+    
