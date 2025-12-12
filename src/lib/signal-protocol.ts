@@ -130,13 +130,14 @@ export async function generateSignalKeys(userId: string) {
   const signedPreKey = await KeyHelper.generateSignedPreKey(identityKeyPair, registrationId + 1);
   await store.storeSignedPreKey(signedPreKey.keyId, signedPreKey.keyPair);
 
+  // This is the public bundle that will be stored on the server
+  // It must be converted to a JSON-serializable format.
   const publicSignedPreKey = {
       keyId: signedPreKey.keyId,
       publicKey: signedPreKey.keyPair.pubKey,
       signature: signedPreKey.signature,
   };
 
-  // This is the public bundle that will be stored on the server
   const serializedPreKeyBundle = {
     registrationId,
     identityKey: identityKeyPair.pubKey,
@@ -147,7 +148,10 @@ export async function generateSignalKeys(userId: string) {
     },
   };
 
-  return { serializedPreKeyBundle };
+  // Convert ArrayBuffers to plain objects for Firestore compatibility
+  const bundleForFirestore = JSON.parse(JSON.stringify(serializedPreKeyBundle));
+
+  return { serializedPreKeyBundle: bundleForFirestore };
 }
 
 async function getSessionCipher(recipientId: string, preKeyBundle: any): Promise<SessionCipher> {
