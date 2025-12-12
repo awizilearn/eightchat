@@ -64,3 +64,13 @@ export interface ModerationAction {
   reason?: string;
   duration?: number; // Duration in hours, if applicable
 }
+
+export interface Transaction {
+    id: string;
+    type: 'sub' | 'payout' | 'tip';
+    description: string;
+    date: string;
+    method: 'Stripe' | 'ETH' | 'Crypto';
+    amount: number;
+    status?: 'completed' | 'pending';
+}

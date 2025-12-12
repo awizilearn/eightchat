@@ -65,6 +65,13 @@ service cloud.firestore {
         allow write: if false;
     }
 
+    match /transactions/{transactionId} {
+      // Only the related user or a moderator can read a transaction
+      allow read: if isOwner(resource.data.userId) || isModerator();
+      // Writes should be handled by a backend/cloud function
+      allow write: if false;
+    }
+
     // Default deny all other reads/writes
     match /{document=**} {
       allow read, write: if false;

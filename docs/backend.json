@@ -184,6 +184,40 @@
                 }
             },
             "required": ["actionType", "targetType", "targetId", "moderatorId", "timestamp"]
+        },
+        "Transaction": {
+            "title": "Transaction",
+            "description": "Represents a financial transaction within the platform.",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["sub", "payout", "tip"]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "method": {
+                    "type": "string",
+                    "enum": ["Stripe", "ETH", "Crypto"]
+                },
+                "amount": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["completed", "pending"]
+                },
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user related to this transaction."
+                }
+            },
+            "required": ["type", "description", "date", "method", "amount", "userId"]
         }
     },
     "auth": {
@@ -213,6 +247,12 @@
                 "$ref": "#/backend/entities/ModerationAction"
             },
             "description": "Stores a log of all moderation actions."
+        },
+        "/transactions/{transactionId}": {
+            "schema": {
+                "$ref": "#/backend/entities/Transaction"
+            },
+            "description": "Stores a log of all financial transactions."
         }
     }
 }
