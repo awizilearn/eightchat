@@ -9,7 +9,6 @@ import { Balance } from '@/components/dashboard/balance';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
-import { StatCard } from '@/components/dashboard/stat-card';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useMemo, useEffect } from 'react';
@@ -21,46 +20,52 @@ import { Card, CardContent } from '@/components/ui/card';
 function DashboardSkeleton() {
     return (
         <div className="flex min-h-screen w-full flex-col bg-background">
-            <div className="container mx-auto max-w-md p-4 sm:p-6 lg:p-8">
-                <div className="flex flex-col gap-8">
+            <div className="mx-auto max-w-md w-full p-4 sm:p-6">
+                <div className="flex flex-col gap-6">
                     {/* Header Skeleton */}
                     <header className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                             <Skeleton className="h-12 w-12 rounded-full" />
                             <div className='space-y-2'>
                                 <Skeleton className="h-4 w-24" />
                                 <Skeleton className="h-6 w-32" />
                             </div>
                         </div>
-                        <Skeleton className="h-8 w-8 rounded-md" />
+                         <div className="flex items-center gap-2">
+                           <Skeleton className="h-8 w-8 rounded-md" />
+                           <Skeleton className="h-8 w-8 rounded-md" />
+                        </div>
                     </header>
+                    
                     {/* Balance Skeleton */}
-                    <Card className="w-full">
-                        <CardContent className="p-6 space-y-4">
-                             <Skeleton className="h-4 w-32" />
-                             <Skeleton className="h-10 w-48" />
-                             <div className="grid grid-cols-2 gap-2">
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                             </div>
-                             <Skeleton className="h-12 w-full" />
-                        </CardContent>
-                    </Card>
-                     {/* Stats Skeleton */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Skeleton className="h-28 w-full" />
-                        <Skeleton className="h-28 w-full" />
-                        <Skeleton className="h-28 w-full" />
-                        <Skeleton className="h-28 w-full" />
+                    <div className="w-full space-y-4">
+                        <div className="flex justify-center">
+                            <Skeleton className="h-10 w-56 rounded-full" />
+                        </div>
+                        <div className="text-center space-y-2">
+                             <Skeleton className="h-4 w-32 mx-auto" />
+                             <Skeleton className="h-12 w-48 mx-auto" />
+                             <Skeleton className="h-6 w-36 mx-auto" />
+                        </div>
+                        <Skeleton className="h-40 w-full" />
                     </div>
-                    {/* Chart Skeleton */}
-                    <Skeleton className="h-80 w-full" />
+                    
+                     {/* Engagement Skeleton */}
+                    <div className="space-y-4">
+                        <Skeleton className="h-6 w-40" />
+                        <div className="grid grid-cols-3 gap-3">
+                            <Skeleton className="h-28 w-full" />
+                            <Skeleton className="h-28 w-full" />
+                            <Skeleton className="h-28 w-full" />
+                        </div>
+                    </div>
+                  
                     {/* Activity Skeleton */}
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
+                     <div className="space-y-4">
+                        <Skeleton className="h-6 w-32" />
+                        <div className="space-y-2">
                             {[...Array(3)].map((_, i) => (
-                                <div key={i} className="flex items-center gap-4">
+                                <div key={i} className="flex items-center gap-4 py-2">
                                     <Skeleton className="h-10 w-10 rounded-full" />
                                     <div className="flex-grow space-y-2">
                                         <Skeleton className="h-4 w-3/4" />
@@ -70,8 +75,7 @@ function DashboardSkeleton() {
                                 </div>
                             ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
                 </div>
             </div>
         </div>
