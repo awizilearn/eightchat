@@ -21,7 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 function DashboardSkeleton() {
     return (
         <div className="flex min-h-screen w-full flex-col bg-background">
-            <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
+            <div className="container mx-auto max-w-md p-4 sm:p-6 lg:p-8">
                 <div className="flex flex-col gap-8">
                     {/* Header Skeleton */}
                     <header className="flex items-center justify-between">
@@ -112,37 +112,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
-      <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col gap-8">
+    <div className="flex min-h-screen w-full flex-col bg-background text-foreground pb-24">
+      <div className="mx-auto max-w-md w-full p-4 sm:p-6">
+        <div className="flex flex-col gap-6">
           <DashboardHeader />
           <Balance />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={<Users className="h-5 w-5" />}
-              label="Active Subs"
-              value="1,204"
-              change={12}
-            />
-            <StatCard
-              icon={<TrendingDown className="h-5 w-5" /> }
-              label="Churn Rate"
-              value="2.1%"
-              change={-0.4}
-            />
-            <StatCard
-              icon={<DollarSign className="h-5 w-5" />}
-              label="ARPU"
-              value="$12.50"
-              change={5}
-            />
-            <StatCard
-              icon={<CalendarDays className="h-5 w-5" />}
-              label="MRR"
-              value="$14.2k"
-              change={8}
-            />
-          </div>
           <RevenueChart />
           <RecentActivity userId={user.uid} />
         </div>
