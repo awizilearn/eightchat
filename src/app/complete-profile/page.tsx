@@ -44,7 +44,7 @@ export default function CompleteProfilePage() {
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef).then((docSnap) => {
         if (docSnap.exists()) {
-          router.push('/');
+          router.push('/home');
         }
       });
     }
@@ -73,7 +73,7 @@ export default function CompleteProfilePage() {
         signalPreKeyBundle: serializedPreKeyBundle, // This is now JSON-safe
       });
 
-      router.push('/');
+      router.push('/home');
     } catch (error) {
       console.error('Error creating user profile:', error);
       setIsSubmitting(false);
