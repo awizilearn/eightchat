@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
       // To solve the "Module not found: Can't resolve 'fs'" error
       // Some dependencies of libsignal-protocol expect a Node.js environment
       config.resolve.fallback = {
+        ...config.resolve.fallback,
         fs: false,
       };
     }
