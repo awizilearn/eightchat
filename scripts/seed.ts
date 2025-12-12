@@ -1,6 +1,7 @@
 
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { config } from 'dotenv';
 
 // Load environment variables from .env file
@@ -21,6 +22,7 @@ initializeApp({
 });
 
 const db = getFirestore();
+const auth = getAuth();
 
 // Data from placeholder-images.json
 const placeholderImages = {
@@ -29,9 +31,10 @@ const placeholderImages = {
     "creator-2-avatar": "https://images.unsplash.com/photo-1607031542107-f6f46b5d54e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjUyODg5NjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
     "creator-2-banner": "https://images.unsplash.com/photo-1645542933735-e2b556e57d52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjdWxpbmFyeSUyMGtpdGNoZW58ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
     "creator-3-avatar": "https://images.unsplash.com/photo-1707000414103-c7c65b336e95?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpc3QlMjBwYWludHxlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    "creator-3-banner": "https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8fDE3NjUyNzAyMzkzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "creator-3-banner": "https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8MTc2NTI3MDIzMzkzfDA&ixlib=rb-4.1.0&q=80&w=1080",
     "creator-4-avatar": "https://images.unsplash.com/photo-1639916765637-43de505e45a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3cml0ZXIlMjBkZXNrfGVufDB8fHx8MTc2NTM2NjcwMnww&ixlib=rb-4.1.0&q=80&w=1080",
     "creator-4-banner": "https://images.unsplash.com/photo-1723334538533-e0fbdaabc637?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dmludGFnZSUyMGxpYnJhcnl8ZW58MHx8fHwxNzY1MzYxNDM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    "admin-avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwb3J0cmFpdCUyMGJ1c2luZXNzfGVufDB8fHx8MTcyNDU1MTIzNnww&ixlib=rb-4.1.0&q=80&w=1080",
     "content-1": "https://images.unsplash.com/photo-1556139930-c23fa4a4f934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWJzdHJhY3QlMjBnb2xkfGVufDB8fHx8MTc2NTMzNDQxOHww&ixlib=rb-4.1.0&q=80&w=1080",
     "content-2": "https://images.unsplash.com/photo-1617326021886-53d6be1d7154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwaW50ZXJpb3J8ZW58MHx8fHwxNzY1MzMzNDA3fDA&ixlib=rb-4.1.0&q=80&w=1080",
     "content-3": "https://images.unsplash.com/photo-1616671285410-2a676a9a433d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxnb3VybWV0JTIwZm9vZHxlbnwwfHx8fDE3NjUyNjM2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -39,7 +42,7 @@ const placeholderImages = {
     "content-5": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
     "content-6": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
     "content-7": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "content-8": "https://images.unsplash.com/photo-1512390225428-a9d51c817f94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8fDE3NjUyNzQwNjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-8": "https://images.unsplash.com/photo-1512390225428-a9d51c817f94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8MTc2NTI3NDA2Nnww&ixlib=rb-4.1.0&q=80&w=1080",
 };
 
 
@@ -122,11 +125,44 @@ const creators = [
   }
 ];
 
+const adminUser = {
+    id: 'admin-user',
+    displayName: 'Admin User',
+    email: 'admin@example.com',
+    role: 'admin',
+    bio: 'Platform administrator with full access.',
+    photoURL: placeholderImages["admin-avatar"],
+};
+
+
 const seedDatabase = async () => {
   console.log("Seeding database...");
   const batch = db.batch();
 
-  // Note: This seed script doesn't handle Signal keys.
+  // Create admin user in Auth
+  try {
+    const adminAuthUser = await auth.createUser({
+        uid: adminUser.id,
+        email: adminUser.email,
+        password: 'password123',
+        displayName: adminUser.displayName,
+        photoURL: adminUser.photoURL,
+    });
+    console.log("Successfully created admin auth user:", adminAuthUser.uid);
+  } catch (error: any) {
+     if (error.code === 'auth/uid-already-exists' || error.code === 'auth/email-already-exists') {
+        console.log("Admin auth user already exists.");
+    } else {
+        console.error("Error creating admin auth user:", error);
+    }
+  }
+
+  // Add admin to Firestore
+  const adminDocRef = db.collection('users').doc(adminUser.id);
+  batch.set(adminDocRef, { ...adminUser, signalPreKeyBundle: {} });
+
+
+  // Note: This seed script doesn't handle Signal keys for creators.
   // Real users created via the app will have them.
   creators.forEach(creator => {
     const docRef = db.collection('users').doc(creator.id);
@@ -135,7 +171,7 @@ const seedDatabase = async () => {
 
   try {
     await batch.commit();
-    console.log("Database seeded successfully with", creators.length, "creators.");
+    console.log("Database seeded successfully with", creators.length, "creators and 1 admin user.");
   } catch (error) {
     console.error("Error seeding database:", error);
   }
