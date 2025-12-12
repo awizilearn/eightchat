@@ -3,6 +3,8 @@
 
 import {
   GoogleAuthProvider,
+  TwitterAuthProvider,
+  OAuthProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
@@ -47,6 +49,28 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function AppleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
+      <path
+        d="M12.012 15.388c-.68 0-1.385-.23-2.134-.712-1.21-.78-2.45-2.253-2.45-4.132 0-2.344 1.57-3.923 3.655-3.923 1.155 0 2.06.52 2.755.52.67 0 1.68-.535 2.87-.535 2.075 0 3.51 1.353 3.51 3.427 0 1.48-.73 2.92-1.815 3.822-1.14.93-2.255 1.5-3.555 1.516-.11.002-.22.002-.33.002a11.3 11.3 0 0 1-.996-.01zm.14-12.722c.925-.03 1.95.45 2.67.98.63.46 1.12.9 1.59 1.53.03.04.05.08.05.13 0 .07-.03.13-.08.17-.58.48-1.04 1.14-1.04 1.95 0 .2.02.4.06.59-.57.06-1.12.22-1.7.22-.64 0-1.35-.26-2.12-.73-1.1-.68-2.2-2.15-2.2-3.8 0-1.95 1.25-3.14 2.86-3.14.36 0 .7.09 1.1.13z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function XIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
+      <path
+        d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 
 export default function SignUpPage() {
   const auth = useAuth();
@@ -74,21 +98,24 @@ export default function SignUpPage() {
     }
   }, [user, loading, router, firestore]);
 
-  const handleGoogleSignIn = async () => {
+  const handleSocialSignIn = async (provider: GoogleAuthProvider | TwitterAuthProvider | OAuthProvider) => {
     if (!auth) return;
-
-    const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
+      // The useEffect hook will handle redirection
     } catch (error) {
-      console.error('Error signing in with Google', error);
+      console.error('Error signing in with social provider', error);
       toast({
         variant: "destructive",
-        title: "Erreur d'inscription",
-        description: "Impossible de s'inscrire avec Google. Veuillez réessayer."
+        title: "Erreur de connexion",
+        description: "Impossible de se connecter avec ce service. Veuillez réessayer."
       })
     }
   };
+
+  const handleGoogleSignIn = () => handleSocialSignIn(new GoogleAuthProvider());
+  const handleTwitterSignIn = () => handleSocialSignIn(new TwitterAuthProvider());
+  const handleAppleSignIn = () => handleSocialSignIn(new OAuthProvider('apple.com'));
   
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,14 +228,27 @@ export default function SignUpPage() {
             </div>
         </div>
         
-        <div className="w-full">
+        <div className="w-full grid grid-cols-3 gap-3">
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
                 onClick={handleGoogleSignIn}
             >
-                <GoogleIcon className="mr-2 h-5 w-5" />
-                Continue with Google
+                <GoogleIcon className="h-5 w-5" />
+            </Button>
+            <Button
+                className="w-full h-12 text-md"
+                variant="outline"
+                onClick={handleTwitterSignIn}
+            >
+                <XIcon className="h-5 w-5" />
+            </Button>
+            <Button
+                className="w-full h-12 text-md"
+                variant="outline"
+                onClick={handleAppleSignIn}
+            >
+                <AppleIcon className="h-6 w-6" />
             </Button>
         </div>
         
