@@ -26,17 +26,27 @@ import {
 
 
 // Define status types and their corresponding badge styles
-type Status = 'Active' | 'Creator' | 'Suspended';
+type Status = 'Active' | 'Creator' | 'Suspended' | 'Admin' | 'Moderator';
 const statusStyles: Record<Status, string> = {
   Active: 'bg-green-500/20 text-green-400 border-green-500/30',
   Creator: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   Suspended: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  Admin: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  Moderator: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
 };
 
 
 const UserListItem = ({ user }: { user: UserProfile & { id: string } }) => {
-  // Determine status based on role, can be expanded with a real status field
-  const status: Status = user.role === 'createur' ? 'Creator' : 'Active';
+  // Determine status based on role
+  const getStatus = (role: UserProfile['role']): Status => {
+    switch (role) {
+        case 'createur': return 'Creator';
+        case 'admin': return 'Admin';
+        case 'moderateur': return 'Moderator';
+        default: return 'Active';
+    }
+  }
+  const status = getStatus(user.role);
 
   return (
     <div className="flex items-center gap-4 rounded-lg bg-card p-3">

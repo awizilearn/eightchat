@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -6,342 +7,217 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
   BarChart,
-  ChevronLeft,
-  Filter,
-  MoreVertical,
   Users,
-  Clock,
-  MessageSquare,
-  Heart,
-  Star,
+  Shield,
+  UserCheck,
 } from 'lucide-react';
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from 'recharts';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/chat-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const statData = [
-  {
-    icon: <Users className="h-6 w-6 text-primary" />,
-    label: 'DAU',
-    value: '1,284',
-    change: '+12.5%',
-    changeColor: 'text-green-400',
-  },
-  {
-    icon: <Clock className="h-6 w-6 text-primary" />,
-    label: 'Avg. Session',
-    value: '24m 15s',
-    change: '-3.1%',
-    changeColor: 'text-red-400',
-  },
-];
+const COLORS = {
+    createur: 'hsl(var(--chart-1))',
+    abonne: 'hsl(var(--chart-2))',
+    moderateur: 'hsl(var(--chart-3))',
+    admin: 'hsl(var(--chart-4))',
+    agence: 'hsl(var(--chart-5))',
+};
 
-const loginActivityData = [
-  { name: 'Mon', value: 2400 },
-  { name: 'Tue', value: 1398 },
-  { name: 'Wed', value: 9800 },
-  { name: 'Thu', value: 3908 },
-  { name: 'Fri', value: 4800 },
-  { name: 'Sat', value: 3800 },
-  { name: 'Sun', value: 4300 },
-];
-
-const contentConsumptionData = [
-  { name: 'Video Views', value: 245200, color: 'hsl(var(--chart-1))' },
-  { name: 'Article Reads', value: 102800, color: 'hsl(var(--chart-2))' },
-  { name: 'Audio Plays', value: 88100, color: 'hsl(var(--chart-3))' },
-];
-const totalConsumption = contentConsumptionData.reduce(
-  (acc, curr) => acc + curr.value,
-  0
-);
-
-const recentActivities = [
-  {
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    name: 'Alex Johnson',
-    action: 'commented on "Future of Tech"',
-    time: '2 minutes ago',
-    icon: <MessageSquare className="h-5 w-5 text-muted-foreground" />,
-  },
-  {
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026705d',
-    name: 'Maria Garcia',
-    action: 'liked a video',
-    time: '15 minutes ago',
-    icon: <Heart className="h-5 w-5 text-primary" fill="currentColor" />,
-  },
-  {
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026706d',
-    name: 'Chris Lee',
-    action: 'subscribed to a creator',
-    time: '1 hour ago',
-    icon: <Star className="h-5 w-5 text-primary" fill="currentColor" />,
-  },
-];
-
-function StatCard({
-  icon,
-  label,
-  value,
-  change,
-  changeColor,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  change: string;
-  changeColor: string;
-}) {
-  return (
-    <Card className="bg-card">
-      <CardContent className="p-4 space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-            {icon}
-          </div>
-          <span className="text-sm font-medium text-muted-foreground">
-            {label}
-          </span>
+function AdminDashboardSkeleton() {
+    return (
+        <div className="p-6 space-y-8 pb-24">
+            <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-4 w-40 mt-1" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Creators</CardTitle>
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-4 w-32 mt-1" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Moderation Actions</CardTitle>
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-12" />
+                        <Skeleton className="h-4 w-28 mt-1" />
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>User Roles Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80 w-full flex items-center justify-center">
+                            <Skeleton className="h-64 w-64 rounded-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Signups</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                             <div key={i} className="flex items-center gap-4">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <div className="flex-grow space-y-2">
+                                    <Skeleton className="h-4 w-2/3" />
+                                    <Skeleton className="h-3 w-1/3" />
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-        <div className="flex items-baseline gap-2">
-          <p className="text-3xl font-bold">{value}</p>
-          <span className={`text-sm font-semibold ${changeColor}`}>
-            {change}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  );
+    )
 }
 
-export default function UserReportsPage() {
+
+export default function AdminDashboardPage() {
+  const firestore = useFirestore();
+
+  const usersQuery = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+  const { data: usersData, loading: usersLoading } = useCollection(usersQuery);
+
+  const moderationQuery = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'moderation-actions');
+  }, [firestore]);
+  const { data: moderationData, loading: moderationLoading } = useCollection(moderationQuery);
+
+  const { totalUsers, totalCreators, roleDistribution } = useMemo(() => {
+    if (!usersData) return { totalUsers: 0, totalCreators: 0, roleDistribution: [] };
+
+    const users = usersData.docs.map(doc => doc.data() as UserProfile);
+    const roles = users.reduce((acc, user) => {
+        acc[user.role] = (acc[user.role] || 0) + 1;
+        return acc;
+    }, {} as Record<UserProfile['role'], number>);
+    
+    const distribution = Object.entries(roles).map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value,
+        fill: COLORS[name as keyof typeof COLORS]
+    }));
+
+    return {
+        totalUsers: users.length,
+        totalCreators: roles['createur'] || 0,
+        roleDistribution: distribution,
+    };
+  }, [usersData]);
+
+  const totalModerationActions = useMemo(() => {
+    return moderationData?.docs.length || 0;
+  }, [moderationData]);
+
+
+  const loading = usersLoading || moderationLoading;
+
+  if (loading) {
+    return <AdminDashboardSkeleton />;
+  }
+
   return (
     <div className="p-6 space-y-8 pb-24">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <ChevronLeft />
-          </Button>
-          <h1 className="text-xl font-bold">User Reports</h1>
-        </div>
-        <Button variant="ghost" size="icon">
-          <MoreVertical />
-        </Button>
-      </header>
+      <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
 
-      <Card className="bg-card">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Filters</CardTitle>
-            <Button variant="link" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Apply
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Date Range</label>
-              <Select defaultValue="7d">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Last 7 Days</SelectItem>
-                  <SelectItem value="30d">Last 30 Days</SelectItem>
-                  <SelectItem value="90d">Last 90 Days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">User Type</label>
-              <Select defaultValue="all">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="subscriber">Subscribers</SelectItem>
-                  <SelectItem value="creator">Creators</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
-              Content Category
-            </label>
-            <Select defaultValue="all">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="art">Art</SelectItem>
-                <SelectItem value="music">Music</SelectItem>
-                <SelectItem value="writing">Writing</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <section className="grid grid-cols-2 gap-4">
-        {statData.map((stat, i) => (
-          <StatCard key={i} {...stat} />
-        ))}
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold mb-4">Login Activity</h2>
-        <Card className="bg-card">
-          <CardContent className="h-64 p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={loginActivityData}>
-                <defs>
-                  <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor="hsl(var(--primary))"
-                      stopOpacity={0.4}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="hsl(var(--primary))"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="name"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value / 1000}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    borderColor: 'hsl(var(--border))',
-                    borderRadius: 'var(--radius)',
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="hsl(var(--primary))"
-                  fill="url(#colorUv)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalUsers}</div>
+            <p className="text-xs text-muted-foreground">All registered users</p>
           </CardContent>
         </Card>
-      </section>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Creators</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCreators}</div>
+            <p className="text-xs text-muted-foreground">Number of creators on the platform</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Moderation Actions</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalModerationActions}</div>
+            <p className="text-xs text-muted-foreground">Total actions taken by moderators</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-4">Content Consumption</h2>
-        <Card className="bg-card">
-          <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
-            <div className="relative h-40 w-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={contentConsumptionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={75}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {contentConsumptionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-3xl font-bold">
-                  {(totalConsumption / 1000).toFixed(0)}k
-                </p>
-                <p className="text-sm text-muted-foreground">Total</p>
-              </div>
-            </div>
-            <div className="flex-1 space-y-3">
-              {contentConsumptionData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span>{item.name}</span>
-                  </div>
-                  <span className="font-semibold">
-                    {(item.value / 1000).toFixed(1)}k
-                  </span>
-                </div>
-              ))}
+      <div className="grid gap-6 md:grid-cols-1">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Roles Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={roleDistribution}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            dataKey="value"
+                        >
+                            {roleDistribution.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </PieChart>
+                </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
-      </section>
+      </div>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-4">Recent Activities</h2>
-        <div className="space-y-2">
-          {recentActivities.map((activity, index) => (
-            <Card key={index} className="bg-card">
-              <CardContent className="p-4 flex items-center gap-4">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={activity.avatar} />
-                  <AvatarFallback>{activity.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-semibold">{activity.name}</span>{' '}
-                    {activity.action}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {activity.time}
-                  </p>
-                </div>
-                {activity.icon}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
-
-    
