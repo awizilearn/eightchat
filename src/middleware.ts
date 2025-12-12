@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   }
     
   const publicPaths = ['/login', '/signup', '/'];
-  const isPublicPath = publicPaths.some((path) => pathname === path) || (pathname === '/complete-profile' && request.nextUrl.searchParams.has('new-user'));
+  const isPublicPath = publicPaths.includes(pathname);
 
 
   // This cookie is set by Firebase Auth on the client side
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
   }
 
   // If user is logged in and tries to access a public path, redirect to home.
-  if (authCookie && publicPaths.includes(pathname)) {
+  if (authCookie && isPublicPath) {
      return NextResponse.redirect(new URL('/home', request.url));
   }
 

@@ -11,16 +11,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Eye, EyeOff } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { ShieldCheck, Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -84,19 +76,22 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      getDoc(userDocRef).then((docSnap) => {
-        if (docSnap.exists()) {
-          router.push('/home');
-        } else {
-          router.push('/complete-profile?new-user=true');
-        }
-      });
+      router.push('/home');
     }
-  }, [user, loading, router, firestore]);
+  }, [user, loading, router]);
   
-  const handleSocialSignIn = async (provider: GoogleAuthProvider | TwitterAuthProvider | OAuthProvider) => {
+  const handleSocialSignIn = async (providerName: 'google' | 'apple' | 'twitter') => {
     if (!auth) return;
+    
+    let provider;
+    if (providerName === 'google') {
+        provider = new GoogleAuthProvider();
+    } else if (providerName === 'apple') {
+        provider = new OAuthProvider('apple.com');
+    } else {
+        provider = new TwitterAuthProvider();
+    }
+
     try {
       await signInWithPopup(auth, provider);
       // The useEffect hook will handle redirection
@@ -109,11 +104,6 @@ export default function LoginPage() {
       })
     }
   };
-
-
-  const handleGoogleSignIn = () => handleSocialSignIn(new GoogleAuthProvider());
-  const handleTwitterSignIn = () => handleSocialSignIn(new TwitterAuthProvider());
-  const handleAppleSignIn = () => handleSocialSignIn(new OAuthProvider('apple.com'));
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,22 +145,26 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleEmailSignIn} className="w-full space-y-4 mt-8">
-            <Input 
-                type="email" 
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 bg-card border-border/50 text-base"
-            />
             <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    type="email" 
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-12 bg-card border-border/50 text-base pl-10"
+                />
+            </div>
+            <div className="relative">
+                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                  <Input 
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 bg-card border-border/50 text-base pr-10"
+                    className="h-12 bg-card border-border/50 text-base pr-10 pl-10"
                 />
                 <button 
                     type="button" 
@@ -199,7 +193,7 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border/50" />
             </div>
-            <div className="relative flex justify-center text-xs">
+            <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
                     Or continue with
                 </span>
@@ -210,21 +204,21 @@ export default function LoginPage() {
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
-                onClick={handleGoogleSignIn}
+                onClick={() => handleSocialSignIn('google')}
             >
                 <GoogleIcon className="h-5 w-5" />
             </Button>
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
-                onClick={handleTwitterSignIn}
+                onClick={() => handleSocialSignIn('twitter')}
             >
                 <XIcon className="h-5 w-5" />
             </Button>
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
-                onClick={handleAppleSignIn}
+                onClick={() => handleSocialSignIn('apple')}
             >
                 <AppleIcon className="h-6 w-6" />
             </Button>
@@ -232,11 +226,11 @@ export default function LoginPage() {
 
         <div className="mt-8 w-full">
              <Button
-                variant="outline"
-                className="w-full h-12 text-base"
+                variant="link"
+                className="w-full h-12 text-base text-muted-foreground"
                 asChild
             >
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/signup">Don't have an account? <span className='text-primary font-semibold ml-1'>Sign Up</span></Link>
             </Button>
         </div>
         

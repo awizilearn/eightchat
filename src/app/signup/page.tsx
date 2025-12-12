@@ -7,24 +7,23 @@ import {
   OAuthProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
+  updateProfile,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Heart, Sparkles, CheckCircle, ShieldCheck, Mail, KeyRound, Eye, EyeOff } from 'lucide-react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth, useUser, useFirestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { generateSignalKeys } from '@/lib/signal-protocol';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -60,17 +59,6 @@ function AppleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function XIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
-      <path
-        d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
 
 export default function SignUpPage() {
   const auth = useAuth();
@@ -81,28 +69,67 @@ export default function SignUpPage() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'abonne' | 'createur' | ''>('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
+      // User is logged in, check if profile exists
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef).then((docSnap) => {
         if (docSnap.exists()) {
-          router.push('/home');
+          router.push('/home'); // Profile exists, go to home
         } else {
-          router.push('/complete-profile?new-user=true');
+          // This case should ideally not be hit with the new flow,
+          // but as a fallback, we can create the profile.
+          // For now, we assume signup flow handles it.
+          // If a user gets here, something is wrong.
+          console.warn("User is authenticated but has no profile. Redirecting to home.")
+          router.push('/home');
         }
       });
     }
   }, [user, loading, router, firestore]);
 
-  const handleSocialSignIn = async (provider: GoogleAuthProvider | TwitterAuthProvider | OAuthProvider) => {
+  const createProfileAndRedirect = async (user: any, role: 'abonne' | 'createur') => {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+        const { serializedPreKeyBundle } = await generateSignalKeys(user.uid);
+        await setDoc(userDocRef, {
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          role: role,
+          signalPreKeyBundle: serializedPreKeyBundle,
+        });
+        router.push('/home'); // Redirect after profile creation
+      } catch (error) {
+        console.error("Error creating user profile:", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur de création de profil",
+          description: "Impossible de finaliser votre compte. Veuillez réessayer."
+        });
+        setIsSubmitting(false);
+      }
+  };
+
+  const handleSocialSignIn = async (provider: GoogleAuthProvider | OAuthProvider) => {
     if (!auth) return;
+    if (!selectedRole) {
+        toast({
+            variant: "destructive",
+            title: "Rôle manquant",
+            description: "Veuillez sélectionner si vous êtes un Abonné ou un Créateur."
+        });
+        return;
+    }
+    setIsSubmitting(true);
     try {
-      await signInWithPopup(auth, provider);
-      // The useEffect hook will handle redirection
+      const result = await signInWithPopup(auth, provider);
+      // After social sign-in, create the profile immediately
+      await createProfileAndRedirect(result.user, selectedRole);
     } catch (error) {
       console.error('Error signing in with social provider', error);
       toast({
@@ -110,28 +137,36 @@ export default function SignUpPage() {
         title: "Erreur de connexion",
         description: "Impossible de se connecter avec ce service. Veuillez réessayer."
       })
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignIn = () => handleSocialSignIn(new GoogleAuthProvider());
-  const handleTwitterSignIn = () => handleSocialSignIn(new TwitterAuthProvider());
   const handleAppleSignIn = () => handleSocialSignIn(new OAuthProvider('apple.com'));
   
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !email || !password) return;
-    if (password !== confirmPassword) {
+    if (!selectedRole) {
         toast({
             variant: "destructive",
-            title: "Erreur de mot de passe",
-            description: "Les mots de passe ne correspondent pas."
+            title: "Rôle manquant",
+            description: "Veuillez sélectionner si vous êtes un Abonné ou un Créateur."
         });
         return;
     }
     
     setIsSubmitting(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // We need to set a displayName for email/password users
+      const displayName = email.split('@')[0];
+      await updateProfile(userCredential.user, { displayName });
+      const userWithProfile = { ...userCredential.user, displayName };
+
+      // After creating auth user, create the Firestore profile
+      await createProfileAndRedirect(userWithProfile, selectedRole);
+
     } catch (error: any) {
       console.error('Error signing up with email', error);
       let description = "Une erreur est survenue. Veuillez réessayer.";
@@ -146,7 +181,6 @@ export default function SignUpPage() {
         title: "Erreur d'inscription",
         description
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -162,31 +196,32 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <main className="flex w-full max-w-sm flex-col items-center text-center">
-        <ShieldCheck className="h-10 w-10 text-primary" />
-        <h1 className="mt-4 font-headline text-4xl font-bold">
-          Create an Account
-        </h1>
-        <p className="mt-2 max-w-xs text-base text-muted-foreground">
-          Join the enclave to access exclusive content.
-        </p>
+        <div className='w-full max-w-sm text-center'>
+            <h1 className="font-headline text-4xl font-bold">Join the Inner Circle</h1>
+            <p className="mt-2 text-base text-muted-foreground">Select your role to customize your experience.</p>
+        </div>
 
         <form onSubmit={handleEmailSignUp} className="w-full space-y-4 mt-8">
-            <Input 
-                type="email" 
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 bg-card border-border/50 text-base"
-            />
             <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    type="email" 
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-12 bg-card border-border/50 text-base pl-10"
+                />
+            </div>
+            <div className="relative">
+                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                  <Input 
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Password"
+                    placeholder="Create a strong password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 bg-card border-border/50 text-base pr-10"
+                    className="h-12 bg-card border-border/50 text-base pr-10 pl-10"
                 />
                 <button 
                     type="button" 
@@ -196,24 +231,53 @@ export default function SignUpPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
             </div>
-             <div className="relative">
-                 <Input 
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="h-12 bg-card border-border/50 text-base pr-10"
-                />
+            
+            <div className='w-full text-left space-y-3 pt-4'>
+                <label className='text-sm font-medium text-muted-foreground'>I AM JOINING AS A:</label>
+                <div className='grid grid-cols-2 gap-3'>
+                    <Card 
+                        onClick={() => setSelectedRole('abonne')}
+                        className={cn(
+                            "p-4 text-center cursor-pointer transition-all duration-200 border-2",
+                            selectedRole === 'abonne' ? 'border-primary shadow-lg shadow-primary/20' : 'border-border/50 hover:border-border'
+                        )}
+                    >
+                        <CardContent className="p-0 relative">
+                             {selectedRole === 'abonne' && <CheckCircle className="h-5 w-5 text-primary absolute -top-2 -right-2" />}
+                             <div className='mx-auto h-12 w-12 rounded-full bg-secondary flex items-center justify-center mb-2'>
+                                <Heart className='h-6 w-6 text-secondary-foreground' />
+                             </div>
+                             <p className='font-semibold'>Subscriber</p>
+                             <p className='text-xs text-muted-foreground'>Discover & support exclusive creators</p>
+                        </CardContent>
+                    </Card>
+                    <Card 
+                         onClick={() => setSelectedRole('createur')}
+                         className={cn(
+                            "p-4 text-center cursor-pointer transition-all duration-200 border-2",
+                             selectedRole === 'createur' ? 'border-primary shadow-lg shadow-primary/20' : 'border-border/50 hover:border-border'
+                        )}
+                    >
+                         <CardContent className="p-0 relative">
+                            {selectedRole === 'createur' && <CheckCircle className="h-5 w-5 text-primary absolute -top-2 -right-2" />}
+                             <div className='mx-auto h-12 w-12 rounded-full bg-secondary flex items-center justify-center mb-2'>
+                                <Sparkles className='h-6 w-6 text-secondary-foreground' />
+                             </div>
+                             <p className='font-semibold'>Creator</p>
+                             <p className='text-xs text-muted-foreground'>Publish content, monetize & earn</p>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
+
 
             <Button
                 type="submit"
                 size="lg"
                 className="w-full h-12 text-base"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !selectedRole}
             >
-                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
+                {isSubmitting ? 'Creating Account...' : 'Continue'}
             </Button>
         </form>
 
@@ -221,44 +285,46 @@ export default function SignUpPage() {
             <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border/50" />
             </div>
-            <div className="relative flex justify-center text-xs">
+            <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
+                    Or Join With
                 </span>
             </div>
         </div>
         
-        <div className="w-full grid grid-cols-3 gap-3">
+        <div className="w-full grid grid-cols-2 gap-3">
              <Button
-                className="w-full h-12 text-md"
+                className="w-full h-12 text-md gap-2"
                 variant="outline"
                 onClick={handleGoogleSignIn}
+                disabled={!selectedRole}
             >
                 <GoogleIcon className="h-5 w-5" />
+                <span>Google</span>
             </Button>
             <Button
-                className="w-full h-12 text-md"
-                variant="outline"
-                onClick={handleTwitterSignIn}
-            >
-                <XIcon className="h-5 w-5" />
-            </Button>
-            <Button
-                className="w-full h-12 text-md"
+                className="w-full h-12 text-md gap-2"
                 variant="outline"
                 onClick={handleAppleSignIn}
+                disabled={!selectedRole}
             >
                 <AppleIcon className="h-6 w-6" />
+                <span>Apple</span>
             </Button>
         </div>
         
         <div className="mt-8 text-center text-sm text-muted-foreground">
              <p>Already have an account?{' '}
-                <Link href="/login" className="text-primary hover:underline">
-                    Log In
+                <Link href="/login" className="text-primary hover:underline font-semibold">
+                    Log in
                 </Link>
             </p>
         </div>
+
+        <p className="flex items-center gap-2 mt-6 text-center text-xs text-muted-foreground">
+            <ShieldCheck className='h-4 w-4' />
+            Encrypted via Signal Protocol
+        </p>
       </main>
     </div>
   );
