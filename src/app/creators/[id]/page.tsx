@@ -4,7 +4,6 @@
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Lock } from 'lucide-react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import {
   collection,
@@ -18,9 +17,8 @@ import {
 import type { UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
-import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ContentCard } from '@/components/creators/content-card';
+import { SubscriptionTiers } from '@/components/creators/subscription-tiers';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3VudGFpbnN8ZW58MHx8fHwxNzY1MzkxOTk3fDA&ixlib=rb-4.1.0&q=80&w=1080';
 
@@ -150,12 +148,7 @@ export default function CreatorProfilePage({
   };
   
   const handleSubscribe = () => {
-    // This would typically open a payment modal or redirect.
-    // For now, let's just log it.
-    console.log(`Subscribing to ${creator?.displayName}`);
-    // A real implementation would use the SubscriptionTierCard's dialog
-    const firstTier = document.getElementById('subscribe-button-0');
-    firstTier?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('subscription-tiers')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   if (loading) {
@@ -229,6 +222,15 @@ export default function CreatorProfilePage({
             </Button>
         </div>
         
+        {creator.tiers && creator.tiers.length > 0 && (
+            <SubscriptionTiers 
+                tiers={creator.tiers} 
+                creatorName={creator.displayName}
+                creatorId={params.id}
+                disabled={params.id === user?.uid}
+            />
+        )}
+
         <div className="w-full px-4">
             <Tabs defaultValue="posts">
                 <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-border rounded-none p-0">
@@ -266,5 +268,3 @@ export default function CreatorProfilePage({
     </div>
   );
 }
-
-    
