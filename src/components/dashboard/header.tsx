@@ -1,11 +1,13 @@
 'use client';
-import { Bell } from 'lucide-react';
+import { Bell, PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 export function DashboardHeader() {
   const { user } = useUser();
+  const router = useRouter();
   const userName = user?.displayName?.split(' ')[0] || '';
 
   return (
@@ -21,11 +23,17 @@ export function DashboardHeader() {
           <h1 className="text-xl font-bold">{userName}</h1>
         </div>
       </div>
-      <Button variant="ghost" size="icon" className="relative">
-        <Bell className="h-6 w-6" />
-        <span className="sr-only">Notifications</span>
-        <div className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
-      </Button>
+      <div className='flex items-center gap-2'>
+        <Button variant="ghost" size="icon" className="relative" onClick={() => router.push('/creator/post/new')}>
+            <PlusCircle className="h-6 w-6" />
+            <span className="sr-only">New Post</span>
+        </Button>
+        <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-6 w-6" />
+            <span className="sr-only">Notifications</span>
+            <div className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+        </Button>
+      </div>
     </header>
   );
 }
