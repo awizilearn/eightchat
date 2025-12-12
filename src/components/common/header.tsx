@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Crown, LogOut, MessageSquare, Settings, User as UserIcon } from 'lucide-react';
+import { Crown, LogOut, MessageSquare, Settings, User as UserIcon, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -13,15 +13,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/chat-data';
+import { useMemo } from 'react';
+import { Skeleton } from '../ui/skeleton';
 
 export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center">
-        <Link href="/" className="flex items-center gap-2 mr-6">
+        <Link href="/discover" className="flex items-center gap-2 mr-6">
           <Crown className="h-8 w-8 text-primary" />
           <span className="font-headline text-2xl font-bold tracking-tight text-primary whitespace-nowrap">
             Golden Enclave
@@ -38,17 +42,29 @@ export function Header() {
 }
 
 function UserMenu() {
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
+  const userProfileRef = useMemo(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  
+  const { data: userProfileDoc, loading: profileLoading } = useDoc(userProfileRef);
+  const userProfile = userProfileDoc?.data() as UserProfile;
+
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/login');
   };
 
+  const loading = userLoading || profileLoading;
+
   if (loading) {
-    return null; // or a skeleton loader
+    return <Skeleton className="h-10 w-10 rounded-full" />;
   }
 
   if (!user) {
@@ -58,6 +74,9 @@ function UserMenu() {
       </Button>
     );
   }
+
+  const isModerator = userProfile?.role === 'admin' || userProfile?.role === 'moderateur';
+  const isCreator = userProfile?.role === 'createur';
 
   return (
     <DropdownMenu>
@@ -84,19 +103,35 @@ function UserMenu() {
             <MessageSquare className="mr-2 h-4 w-4" />
             <span>Messages</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => isCreator && router.push(`/creators/${user.uid}`)}
+            disabled={!isCreator}
+          >
             <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>Mon Profil</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem disabled>
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>Paramètres</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        
+        {isModerator && (
+            <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => router.push('/moderation')}>
+                        <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
+                        <span className='text-primary'>Modération</span>
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+            </>
+        )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>Déconnexion</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
