@@ -27,37 +27,35 @@ export function MessageList({ messages, currentUserId, loading, unlockedMessages
 
 
   return (
-    <ScrollArea className="flex-1" ref={scrollAreaRef}>
-      <div className="p-4 space-y-6">
-        {loading ? (
-          <div className='space-y-4'>
-            <div className='flex items-end gap-2'>
-              <Skeleton className='h-8 w-8 rounded-full' />
-              <Skeleton className='h-10 w-48 rounded-2xl' />
+    <main className="flex-1 overflow-y-auto pt-2">
+        <p className="text-muted-foreground/80 text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">Messages are end-to-end encrypted by the Signal Protocol.</p>
+        <div className="space-y-2">
+            {loading ? (
+            <div className='space-y-2 p-4'>
+                <div className='flex items-end gap-2'>
+                <Skeleton className='h-8 w-8 rounded-full' />
+                <Skeleton className='h-12 w-48 rounded-2xl' />
+                </div>
+                <div className='flex items-end gap-2 flex-row-reverse'>
+                <Skeleton className='h-12 w-64 rounded-2xl' />
+                </div>
+                <div className='flex items-end gap-2'>
+                <Skeleton className='h-8 w-8 rounded-full' />
+                <Skeleton className='h-16 w-40 rounded-2xl' />
+                </div>
             </div>
-            <div className='flex items-end gap-2 flex-row-reverse'>
-              <Skeleton className='h-10 w-64 rounded-2xl' />
-            </div>
-             <div className='flex items-end gap-2'>
-              <Skeleton className='h-8 w-8 rounded-full' />
-              <Skeleton className='h-16 w-40 rounded-2xl' />
-            </div>
-             <div className='flex items-end gap-2 flex-row-reverse'>
-              <Skeleton className='h-10 w-32 rounded-2xl' />
-            </div>
-          </div>
-        ) : (
-          messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isOwnMessage={message.senderId === currentUserId}
-              isContentUnlocked={unlockedMessages.has(message.id)}
-              onUnlockContent={onUnlockContent}
-            />
-          ))
-        )}
-      </div>
-    </ScrollArea>
+            ) : (
+            messages.map((message) => (
+                <MessageBubble
+                key={message.id}
+                message={message}
+                isOwnMessage={message.senderId === currentUserId}
+                isContentUnlocked={unlockedMessages.has(message.id)}
+                onUnlockContent={onUnlockContent}
+                />
+            ))
+            )}
+        </div>
+    </main>
   );
 }
