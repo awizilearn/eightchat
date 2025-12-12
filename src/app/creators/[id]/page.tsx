@@ -1,14 +1,10 @@
+
 'use client';
 
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Header } from '@/components/common/header';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Check, UserPlus } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { SubscriptionTierCard } from '@/components/creators/subscription-tier-card';
-import { ContentCard } from '@/components/creators/content-card';
-import { Separator } from '@/components/ui/separator';
+import { Lock } from 'lucide-react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import {
   collection,
@@ -19,41 +15,91 @@ import {
   serverTimestamp,
   doc,
 } from 'firebase/firestore';
-import type { Conversation, UserProfile } from '@/lib/chat-data';
+import type { UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ContentCard } from '@/components/creators/content-card';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3VudGFpbnN8ZW58MHx8fHwxNzY1MzkxOTk3fDA&ixlib=rb-4.1.0&q=80&w=1080';
 
+// We can create a simple local header as the new design is specific to this page
+function ProfileHeader() {
+    const router = useRouter();
+    return (
+        <div className="sticky top-0 z-20 flex items-center bg-background/80 p-4 pb-2 justify-between backdrop-blur-sm">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <span className="material-symbols-outlined text-3xl">arrow_back</span>
+            </Button>
+            <div className="flex items-center justify-center">
+                <p className="text-lg font-bold">Profile</p>
+            </div>
+            <div className="flex w-12 items-center justify-end">
+                <Button variant="ghost" size="icon">
+                    <span className="material-symbols-outlined">more_horiz</span>
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 function CreatorProfileSkeleton() {
     return (
-        <>
-            <Header />
-            <main>
-                <div className="relative h-64 w-full md:h-80 bg-muted">
-                    <Skeleton className="h-full w-full" />
+        <div className="bg-background min-h-screen">
+            <ProfileHeader />
+             <div className="relative px-4">
+                <Skeleton className="w-full rounded-lg min-h-[160px]" />
+                <div className="absolute bottom-0 left-4 translate-y-1/2">
+                    <Skeleton className="rounded-full min-h-24 w-24 border-4 border-background" />
                 </div>
-                 <div className="container mx-auto -mt-20 px-4 pb-12">
-                    <div className="relative z-10 mb-8 flex flex-col items-center gap-6 md:flex-row md:items-end">
-                        <Skeleton className="h-32 w-32 md:h-40 md:w-40 rounded-full border-4 border-background" />
-                        <div className="flex-1 space-y-2 text-center md:text-left">
-                            <Skeleton className="h-10 w-64 mx-auto md:mx-0" />
-                            <Skeleton className="h-6 w-32 mx-auto md:mx-0" />
-                        </div>
-                        <div className="flex gap-2">
-                           <Skeleton className="h-12 w-32" />
-                           <Skeleton className="h-12 w-32" />
-                        </div>
-                    </div>
-                    <div className="space-y-2 mx-auto max-w-3xl text-center md:mx-0 md:text-left">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
-                    </div>
+            </div>
+            <div className="pt-16 px-4">
+                <div className="flex flex-col justify-center space-y-2">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-5 w-32" />
+                </div>
+                <div className="flex flex-wrap gap-4 pt-4">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-24" />
+                </div>
+                <div className="pt-4 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                </div>
+            </div>
+            <div className="flex w-full max-w-full gap-3 p-4">
+                <Skeleton className="h-12 flex-1" />
+                <Skeleton className="h-12 w-32" />
+            </div>
+             <div className="w-full px-4">
+                 <div className="border-b border-border flex">
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 flex-1" />
                  </div>
-            </main>
-        </>
+                 <div className="grid grid-cols-3 gap-1 pt-4 pb-8">
+                    {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+                 </div>
+             </div>
+        </div>
+    )
+}
+
+function LockedContentTeaser({imageUrl, alt}: {imageUrl: string, alt: string}) {
+    return (
+        <div className="relative aspect-square rounded-lg overflow-hidden group">
+            <Image 
+                src={imageUrl} 
+                alt={alt} 
+                fill 
+                className="object-cover transition-all duration-300"
+                style={{ filter: 'blur(12px)', transform: 'scale(1.1)' }}
+            />
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary text-4xl">lock</span>
+            </div>
+        </div>
     )
 }
 
@@ -74,49 +120,23 @@ export default function CreatorProfilePage({
   const { data: creatorDoc, loading: creatorLoading } = useDoc(creatorRef);
   const creator = creatorDoc?.data() as UserProfile | undefined;
 
-  const currentUserRef = useMemo(() => {
-      if (!user || !firestore) return null;
-      return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-  const { data: currentUserDoc, loading: userLoading } = useDoc(currentUserRef);
-  const currentUserProfile = currentUserDoc?.data() as UserProfile | undefined;
-
-  const isSubscribed = useMemo(() => {
-    if (!currentUserProfile || !currentUserProfile.subscriptions) return false;
-    return currentUserProfile.subscriptions.includes(params.id);
-  }, [currentUserProfile, params.id]);
-
-  const loading = creatorLoading || userLoading;
-
-  if (loading) {
-    return <CreatorProfileSkeleton />;
-  }
-
-  if (!creatorDoc?.exists() || !creator) {
-    notFound();
-  }
+  const loading = creatorLoading;
 
   const handleMessageCreator = async () => {
     if (!user || !firestore || !creator) return;
-
-    // More efficient query to find if a conversation already exists
     const conversationsRef = collection(firestore, 'conversations');
     const q = query(
       conversationsRef,
       where('participantIds', '==', [user.uid, params.id].sort())
     );
-
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      // Conversation already exists
       const conversationId = querySnapshot.docs[0].id;
       router.push(`/chat?conversationId=${conversationId}`);
     } else {
-      // No existing conversation, create a new one
       try {
         const newConversation = await addDoc(conversationsRef, {
-          // Sort participant IDs to ensure query consistency
           participantIds: [user.uid, params.id].sort(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -125,129 +145,126 @@ export default function CreatorProfilePage({
         router.push(`/chat?conversationId=${newConversation.id}`);
       } catch (error) {
         console.error('Error creating conversation:', error);
-        // Optionally, show a toast to the user
       }
     }
   };
+  
+  const handleSubscribe = () => {
+    // This would typically open a payment modal or redirect.
+    // For now, let's just log it.
+    console.log(`Subscribing to ${creator?.displayName}`);
+    // A real implementation would use the SubscriptionTierCard's dialog
+    const firstTier = document.getElementById('subscribe-button-0');
+    firstTier?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  if (loading) {
+    return <CreatorProfileSkeleton />;
+  }
+
+  if (!creatorDoc?.exists() || !creator) {
+    notFound();
+  }
+  
+  const subscriptionPrice = creator.tiers?.[0]?.price?.toFixed(2) || '9.99';
 
   return (
-    <>
-      <Header />
-      <main>
-        {/* Hero Section */}
-        <div className="relative h-64 w-full md:h-80">
-          <Image
-            src={creator.bannerUrl || DEFAULT_BANNER}
-            alt={`${creator.displayName}'s banner`}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+    <div className="bg-background min-h-screen">
+        <ProfileHeader />
+        
+        <div className="relative px-4">
+            <Image 
+                src={creator.bannerUrl || DEFAULT_BANNER} 
+                alt={`${creator.displayName}'s banner`}
+                width={1080}
+                height={400}
+                className="w-full object-cover rounded-lg min-h-[160px]"
+            />
+            <div className="absolute bottom-0 left-4 translate-y-1/2">
+                <Image 
+                    src={creator.photoURL}
+                    alt={creator.displayName}
+                    width={96}
+                    height={96}
+                    className="rounded-full aspect-square object-cover min-h-24 w-24 border-4 border-background"
+                />
+            </div>
         </div>
 
-        <div className="container mx-auto -mt-20 px-4 pb-12">
-          {/* Creator Info Header */}
-          <div className="relative z-10 mb-8 flex flex-col items-center gap-6 md:flex-row md:items-end">
-            <Avatar className="h-32 w-32 border-4 border-background shadow-lg md:h-40 md:w-40">
-              <AvatarImage
-                src={creator.photoURL}
-                alt={creator.displayName}
-              />
-              <AvatarFallback>{creator.displayName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="font-headline text-4xl font-bold md:text-5xl">
-                {creator.displayName}
-              </h1>
-              <p className="text-lg text-muted-foreground">{creator.category}</p>
+        <div className="pt-16 px-4">
+            <div className="flex flex-col justify-center">
+                <p className="text-foreground text-2xl font-bold leading-tight tracking-[-0.015em]">{creator.displayName}</p>
+                <p className="text-muted-foreground text-base font-normal leading-normal">@{creator.displayName.toLowerCase().replace(/\s/g, '')}creates</p>
             </div>
-            <div className="flex gap-2">
-              <Button
-                size="lg"
-                variant="secondary"
+            
+            <div className="flex flex-wrap gap-4 pt-4">
+                <div className="flex items-center gap-1.5">
+                    <p className="text-foreground tracking-light text-base font-bold leading-tight">1.2k</p>
+                    <p className="text-muted-foreground text-base font-normal leading-normal">Subscribers</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <p className="text-foreground tracking-light text-base font-bold leading-tight">{creator.content?.length || 0}</p>
+                    <p className="text-muted-foreground text-base font-normal leading-normal">Posts</p>
+                </div>
+            </div>
+
+            <p className="text-foreground text-base font-normal leading-normal pt-4">{creator.bio}</p>
+        </div>
+
+        <div className="flex w-full max-w-full gap-3 p-4">
+            <Button 
+                className="flex-1 h-12 px-6 rounded-full bg-primary text-background text-base font-bold"
+                onClick={handleSubscribe}
+                disabled={params.id === user?.uid}
+            >
+                <span className="truncate">Subscribe for ${subscriptionPrice}/month</span>
+            </Button>
+            <Button 
+                className="h-12 px-4 rounded-full bg-card text-foreground text-sm font-bold gap-2"
                 onClick={handleMessageCreator}
                 disabled={params.id === user?.uid}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Message
-              </Button>
-              {isSubscribed ? (
-                <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-primary text-primary"
-                    disabled
-                >
-                    <Check className="mr-2 h-5 w-5" />
-                    Abonné
-                </Button>
-              ) : (
-                <Button
-                    size="lg"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={params.id === user?.uid}
-                    onClick={() => {
-                        // Logic to open subscription modal can be triggered from here
-                        // For now, we can assume one of the tier cards will be clicked
-                        const firstTier = document.getElementById('subscribe-button-0');
-                        firstTier?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                >
-                    <UserPlus className="mr-2 h-5 w-5" />
-                    S'abonner
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <p className="mx-auto mb-12 max-w-3xl text-center text-foreground/90 md:mx-0 md:text-left">
-            {creator.longBio}
-          </p>
-
-          <Separator className="my-12 bg-border/50" />
-
-          {/* Subscription Tiers */}
-          {creator.tiers && creator.tiers.length > 0 && (
-            <section className="mb-16">
-                <h2 className="text-center font-headline text-3xl font-bold mb-8">
-                Rejoignez l'enclave de <span className="text-primary">{creator.displayName}</span>
-                </h2>
-                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
-                {creator.tiers.map((tier, index) => (
-                    <SubscriptionTierCard
-                      key={tier.name}
-                      id={`subscribe-button-${index}`}
-                      tier={tier}
-                      creatorName={creator.displayName}
-                      creatorId={params.id}
-                      disabled={params.id === user?.uid}
-                    />
-                ))}
-                </div>
-            </section>
-          )}
-
-          <Separator className="my-12 bg-border/50" />
-
-          {/* Content Grid */}
-          {creator.content && creator.content.length > 0 && (
-            <section>
-                <h2 className="font-headline text-3xl font-bold mb-8">
-                Contenu Exclusif
-                </h2>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {creator.content.map((item) => (
-                    <ContentCard key={item.id} content={item} />
-                ))}
-                </div>
-            </section>
-          )}
+            >
+                <span className="material-symbols-outlined text-xl">lock</span>
+                <span className="truncate">Message</span>
+            </Button>
         </div>
-      </main>
-      <footer className="border-t py-8 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
-      </footer>
-    </>
+        
+        <div className="w-full px-4">
+            <Tabs defaultValue="posts">
+                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-border rounded-none p-0">
+                    <TabsTrigger value="posts" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent">Posts</TabsTrigger>
+                    <TabsTrigger value="videos" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent">Videos</TabsTrigger>
+                    <TabsTrigger value="collections" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent">Collections</TabsTrigger>
+                </TabsList>
+                <TabsContent value="posts" className="pt-4 pb-8">
+                     <div className="grid grid-cols-3 gap-1">
+                        {creator.content && creator.content.length > 0 ? (
+                           creator.content.map((item, index) => {
+                               // Simulate some locked content for the demo
+                               if (index % 2 !== 0 && index > 0) {
+                                   return <LockedContentTeaser key={item.id} imageUrl={item.imageUrl} alt={item.title} />
+                               }
+                               return (
+                                   <div key={item.id} className="aspect-square relative rounded-lg overflow-hidden group">
+                                     <Image src={item.imageUrl} alt={item.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
+                                   </div>
+                               )
+                           })
+                        ) : (
+                            <p className="col-span-3 text-center text-muted-foreground py-8">Aucun post pour le moment.</p>
+                        )}
+                    </div>
+                </TabsContent>
+                 <TabsContent value="videos" className="pt-4 pb-8">
+                    <p className="col-span-3 text-center text-muted-foreground py-8">Aucune vidéo pour le moment.</p>
+                 </TabsContent>
+                 <TabsContent value="collections" className="pt-4 pb-8">
+                    <p className="col-span-3 text-center text-muted-foreground py-8">Aucune collection pour le moment.</p>
+                 </TabsContent>
+            </Tabs>
+        </div>
+    </div>
   );
 }
+
+    
