@@ -1,9 +1,10 @@
+
 'use client';
 
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -46,23 +47,8 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function AppleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path d="M19.39,14.73a5.2,5.2,0,0,1-1.46,3.87,5.77,5.77,0,0,1-4.21,1.82,4.43,4.43,0,0,1-2.34-.63,4.67,4.67,0,0,1-1.92-1.72,1,1,0,0,1-.13-1.07,1,1,0,0,1,1-.61,1,1,0,0,1,1,.69,2.6,2.6,0,0,0,1.1,1,2.57,2.57,0,0,0,1.52.42,3.3,3.3,0,0,0,2.35-1,3.17,3.17,0,0,0,1-2.29,4.24,4.24,0,0,0-1.33-3.15,4.38,4.38,0,0,0-3.3-1.3H9.5a5.3,5.3,0,0,1-3.33-1,5.06,5.06,0,0,1-1.4-3.56A5,5,0,0,1,6.38,4.4,5.43,5.43,0,0,1,10.6,2.53a4.67,4.67,0,0,1,2.5.65,4.5,4.5,0,0,1,1.83,1.66,1,1,0,0,1,.13,1.06,1,1,0,0,1-1,.62,1,1,0,0,1-1-.7,2.5,2.5,0,0,0-1-.95,2.6,2.6,0,0,0-1.5-.4,3.25,3.25,0,0,0-2.37,1,3.06,3.06,0,0,0-1,2.3,4.3,4.3,0,0,0,1.34,3.16,4.5,4.5,0,0,0,3.3,1.3h2.32a3.86,3.86,0,0,1,2.83,1.16A3.56,3.56,0,0,1,19.39,14.73Z"/>
-    </svg>
-  );
-}
 
-function XIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 1200 1227" fill="none" {...props}>
-      <path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6904H306.615L611.412 515.685L658.88 583.579L1055.08 1150.31H892.476L569.165 687.854V687.828Z" fill="currentColor"/>
-    </svg>
-  );
-}
-
-export default function LoginPage() {
+export default function SignUpPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, loading } = useUser();
@@ -71,6 +57,7 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -87,48 +74,50 @@ export default function LoginPage() {
     }
   }, [user, loading, router, firestore]);
 
-  const handleSocialSignIn = async (providerName: 'google' | 'apple' | 'x') => {
+  const handleGoogleSignIn = async () => {
     if (!auth) return;
 
-    let provider;
-    if (providerName === 'google') {
-      provider = new GoogleAuthProvider();
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Non implémenté",
-            description: `La connexion avec ${providerName} n'est pas encore configurée.`
-        })
-      return;
-    }
-
+    const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // The useEffect hook will handle redirection
     } catch (error) {
-      console.error('Error signing in with social provider', error);
+      console.error('Error signing in with Google', error);
       toast({
         variant: "destructive",
-        title: "Erreur de connexion",
-        description: "Impossible de se connecter. Veuillez réessayer."
+        title: "Erreur d'inscription",
+        description: "Impossible de s'inscrire avec Google. Veuillez réessayer."
       })
     }
   };
   
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !email || !password) return;
+    if (password !== confirmPassword) {
+        toast({
+            variant: "destructive",
+            title: "Erreur de mot de passe",
+            description: "Les mots de passe ne correspondent pas."
+        });
+        return;
+    }
     
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // The useEffect hook will handle redirection
+      await createUserWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
-      console.error('Error signing in with email', error);
+      console.error('Error signing up with email', error);
+      let description = "Une erreur est survenue. Veuillez réessayer.";
+      if (error.code === 'auth/email-already-in-use') {
+        description = "Cette adresse e-mail est déjà utilisée. Essayez de vous connecter.";
+      } else if (error.code === 'auth/weak-password') {
+        description = "Le mot de passe doit comporter au moins 6 caractères.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Erreur de connexion",
-        description: "L'adresse e-mail ou le mot de passe est incorrect."
+        title: "Erreur d'inscription",
+        description
       });
     } finally {
       setIsSubmitting(false);
@@ -148,13 +137,13 @@ export default function LoginPage() {
       <main className="flex w-full max-w-sm flex-col items-center text-center">
         <ShieldCheck className="h-10 w-10 text-primary" />
         <h1 className="mt-4 font-headline text-4xl font-bold">
-          Welcome Back
+          Create an Account
         </h1>
         <p className="mt-2 max-w-xs text-base text-muted-foreground">
-          Login to access your exclusive creator content and encrypted messages.
+          Join the enclave to access exclusive content.
         </p>
 
-        <form onSubmit={handleEmailSignIn} className="w-full space-y-4 mt-8">
+        <form onSubmit={handleEmailSignUp} className="w-full space-y-4 mt-8">
             <Input 
                 type="email" 
                 placeholder="Email Address"
@@ -180,18 +169,24 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
             </div>
-            <div className="text-right">
-                <Link href="#" className="text-sm text-primary hover:underline">
-                    Forgot Password?
-                </Link>
+             <div className="relative">
+                 <Input 
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="h-12 bg-card border-border/50 text-base pr-10"
+                />
             </div>
+
             <Button
                 type="submit"
                 size="lg"
                 className="w-full h-12 text-base"
                 disabled={isSubmitting}
             >
-                {isSubmitting ? 'Logging In...' : 'Log In'}
+                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
             </Button>
         </form>
 
@@ -206,54 +201,24 @@ export default function LoginPage() {
             </div>
         </div>
         
-        <div className="w-full space-y-3">
+        <div className="w-full">
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
-                onClick={() => handleSocialSignIn('google')}
+                onClick={handleGoogleSignIn}
             >
                 <GoogleIcon className="mr-2 h-5 w-5" />
                 Continue with Google
             </Button>
-             <Button
-                className="w-full h-12 text-md bg-foreground text-background hover:bg-foreground/80"
-                onClick={() => handleSocialSignIn('x')}
-            >
-                <XIcon className="mr-2 h-4 w-4" />
-                Continue with X
-            </Button>
-             <Button
-                className="w-full h-12 text-md"
-                variant="outline"
-                onClick={() => handleSocialSignIn('apple')}
-            >
-                <AppleIcon className="mr-2 h-5 w-5" />
-                Continue with Apple
-            </Button>
-        </div>
-
-        <div className="mt-8 w-full">
-             <Button
-                variant="outline"
-                className="w-full h-12 text-base"
-                asChild
-            >
-                <Link href="/signup">Sign Up</Link>
-            </Button>
         </div>
         
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-            By signing up, you agree to our{' '}
-            <Link href="#" className="underline hover:text-primary">
-                Terms
-            </Link>{' '}
-            and{' '}
-            <Link href="#" className="underline hover:text-primary">
-                Privacy Policy
-            </Link>
-            .
-        </p>
-
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+             <p>Already have an account?{' '}
+                <Link href="/login" className="text-primary hover:underline">
+                    Log In
+                </Link>
+            </p>
+        </div>
       </main>
     </div>
   );

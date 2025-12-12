@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { collection, query, where, limit } from 'firebase/firestore';
 import { useMemo } from 'react';
 import type { UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ShieldCheck } from 'lucide-react';
 
 function CreatorsShowcase() {
     const firestore = useFirestore();
@@ -89,7 +90,7 @@ export default function WelcomePage() {
           <Button
             size="lg"
             className="h-12 text-base"
-            onClick={() => router.push('/login')}
+            onClick={() => router.push('/signup')}
           >
             Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -99,7 +100,7 @@ export default function WelcomePage() {
             className="text-sm text-muted-foreground"
             onClick={() => router.push('/login')}
           >
-            Already have an account? Sign In
+            Already have an account? Log In
           </Button>
         </div>
       </main>
