@@ -13,21 +13,23 @@ import {
   Lock,
   Edit,
   Tag,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
-import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/chat-data';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 function BitcoinIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg {...props} viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-blue-500">
+    <svg {...props} viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-orange-400">
       <path d="M16.6695 11.237C17.2635 10.7423 17.6183 10.0249 17.6183 9.243C17.6183 7.821 16.5923 6.666 15.3128 6.516V6.513C15.3128 6.003 15.1095 5.514 14.7503 5.157L14.7533 5.154C14.7533 5.154 14.7533 5.154 14.7533 5.154C13.8293 4.23 12.5123 4.23 11.5883 5.154L8.33783 8.4045C8.16233 8.226 7.97483 8.0595 7.77833 7.905L7.77533 7.908C7.77533 7.908 7.77533 7.908 7.77533 7.908C6.85133 7.005 5.53433 7.005 4.61033 7.908C3.68633 8.832 3.68633 10.149 4.61033 11.073L4.61333 11.076C4.61333 11.076 4.61333 11.076 4.61333 11.076L7.86383 14.3265C8.04233 14.502 8.22983 14.6685 8.42633 14.823L8.42933 14.82C8.42933 14.82 8.42933 14.82 8.42933 14.82C9.35333 15.744 10.6703 15.744 11.5943 14.82L14.8448 11.5695C15.0203 11.748 15.2078 11.9145 15.4043 12.069L15.4073 12.066C15.4073 12.066 15.4073 12.066 15.4073 12.066C16.3313 12.969 17.6483 12.969 18.5723 12.066C19.5113 11.127 19.4963 9.798 18.5723 8.874C17.6483 7.95 16.3313 7.95 15.4073 8.874L15.4043 8.877C15.1958 9.042 14.9978 9.219 14.8133 9.405L11.5943 12.624C11.1323 13.086 10.3943 13.086 9.93233 12.624C9.47033 12.162 9.47033 11.424 9.93233 10.962L13.1513 7.743C13.6133 7.281 14.3513 7.281 14.8133 7.743C15.2753 8.205 15.2753 8.943 14.8133 9.405L13.9103 10.308C13.6283 10.59 13.6283 11.052 13.9103 11.334C14.1923 11.616 14.6543 11.616 14.9363 11.334L15.8393 10.431C16.0373 10.233 16.2713 10.08 16.5173 9.984C16.6675 10.347 16.713 10.749 16.6695 11.237Z" />
     </svg>
   );
@@ -56,9 +58,10 @@ const SettingsItem = ({
   action: React.ReactNode;
   onClick?: () => void;
 }) => (
-  <div
-    className="flex items-center gap-4 py-4 cursor-pointer"
+  <button
+    className="flex items-center gap-4 py-4 w-full text-left cursor-pointer"
     onClick={onClick}
+    disabled={!onClick}
   >
     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card">
       {icon}
@@ -67,8 +70,10 @@ const SettingsItem = ({
       <p className="font-semibold">{title}</p>
       {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
     </div>
-    {action}
-  </div>
+    <div onClick={(e) => { e.stopPropagation(); }}>
+        {action}
+    </div>
+  </button>
 );
 
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -103,11 +108,25 @@ export default function SettingsPage() {
   const { user } = useUser();
   const auth = useAuth();
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  
+  const { data: userProfileDoc } = useDoc(userProfileRef);
+  const userProfile = userProfileDoc?.data() as UserProfile | undefined;
+  
+  const isCreator = userProfile?.role === 'createur' || userProfile?.role === 'admin' || userProfile?.role === 'agence';
+
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
+      // This will clear the client-side state
+      // The middleware will handle server-side session clearing via API route
       toast({ title: 'Déconnexion réussie' });
       router.push('/login');
     } catch (error) {
@@ -151,48 +170,43 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">@{user?.displayName?.toLowerCase().replace(' ', '') || "janedoe"}</p>
         </div>
 
-        <Button size="lg" className="w-full h-12 text-base" onClick={() => showToast('Edit Profile', 'Profile editing will be available soon.')}>
+        <Button size="lg" className="w-full h-12 text-base" onClick={() => router.push('/admin/profile')}>
           Edit Profile
         </Button>
         
 
-        <section>
-          <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
-            Monetization & Payouts
-          </h3>
-          <Card>
-            <CardContent className="p-3 divide-y divide-border">
-                <div className="flex items-center gap-4 py-3">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src="https://i.pravatar.cc/150?u=creatorjohn" />
-                        <AvatarFallback>CJ</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-grow">
-                        <p className="font-semibold">Creator John</p>
-                        <p className="text-sm text-muted-foreground">$5.99/mo</p>
-                    </div>
-                    <div className="text-right">
-                        <Switch defaultChecked={true} />
-                        <p className="text-xs text-muted-foreground mt-1">Auto-renew</p>
-                    </div>
-                </div>
-                 <div className="flex items-center gap-4 py-3">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src="https://i.pravatar.cc/150?u=sarahsmith" />
-                        <AvatarFallback>SS</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-grow">
-                        <p className="font-semibold">Sarah Smith</p>
-                        <p className="text-sm text-muted-foreground">$10.00/mo</p>
-                    </div>
-                    <div className="text-right">
-                        <Switch defaultChecked={false} />
-                        <p className="text-xs text-muted-foreground mt-1">Expires in 3d</p>
-                    </div>
-                </div>
-            </CardContent>
-          </Card>
-        </section>
+        {isCreator && (
+            <section>
+                <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
+                    Monetization & Payouts
+                </h3>
+                <Card>
+                    <CardContent className="p-2 divide-y divide-border">
+                        <SettingsItem
+                            icon={<StripeIcon />}
+                            title="Stripe Payouts"
+                            subtitle="Connect your Stripe account"
+                            action={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                            onClick={() => showToast('Stripe Payouts', 'Stripe integration will be available soon.')}
+                        />
+                        <SettingsItem
+                            icon={<BitcoinIcon />}
+                            title="Coinbase Payouts"
+                            subtitle="Connect your Coinbase account"
+                            action={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                             onClick={() => showToast('Coinbase Payouts', 'Coinbase integration will be available soon.')}
+                        />
+                         <SettingsItem
+                            icon={<Tag className="h-6 w-6 text-blue-400" />}
+                            title="Edit subscription tiers"
+                            subtitle="Manage your Bronze, Silver, Gold tiers"
+                            action={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                            onClick={() => router.push('/creator/tiers')}
+                        />
+                    </CardContent>
+                </Card>
+            </section>
+        )}
 
          <section>
           <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
@@ -210,32 +224,13 @@ export default function SettingsPage() {
                     icon={<KeyRound className="h-6 w-6 text-orange-400" />} 
                     title="Two-Factor Auth" 
                     subtitle="Extra security layer" 
-                    action={<Switch defaultChecked={false}/>} 
+                    action={<Switch defaultChecked={false}/>}
                 />
-            </CardContent>
-          </Card>
-        </section>
-
-        <section>
-          <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
-            Notifications
-          </h3>
-          <Card>
-            <CardContent className="p-2 divide-y divide-border">
-                <SettingsItem 
-                    title="New Subscribers" 
-                    icon={<div />}
-                    action={<Switch defaultChecked={true}/>} 
-                />
-                <SettingsItem 
-                    title="Tip Received" 
-                     icon={<div />}
-                    action={<Switch defaultChecked={true}/>} 
-                />
-                <SettingsItem 
-                    title="DM Requests" 
-                     icon={<div />}
-                    action={<Switch defaultChecked={false}/>} 
+                 <SettingsItem 
+                    icon={<MessageSquare className="h-6 w-6 text-purple-400" />} 
+                    title="Direct Messages" 
+                    subtitle="Allow DMs from anyone" 
+                    action={<Switch defaultChecked={true}/>}
                 />
             </CardContent>
           </Card>
@@ -243,23 +238,35 @@ export default function SettingsPage() {
         
         <section>
           <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
-            Linked Accounts
+            App Preferences
           </h3>
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="flex flex-col items-center justify-center p-4 gap-2 aspect-square bg-card/50">
-                <InstagramIcon />
-                <p className="text-sm font-medium">Instagram</p>
-            </Card>
-            <Card className="flex flex-col items-center justify-center p-4 gap-2 aspect-square bg-card/50">
-                <XIcon />
-                <p className="text-sm font-medium">Twitter</p>
-            </Card>
-             <Card className="flex flex-col items-center justify-center p-4 gap-2 aspect-square bg-card/50 border-dashed border-2 border-border">
-                <span className="text-2xl text-muted-foreground">+</span>
-                <p className="text-sm font-medium text-muted-foreground">Connect</p>
-            </Card>
-          </div>
+          <Card>
+            <CardContent className="p-2 divide-y divide-border">
+                 <SettingsItem
+                    icon={<Bell className="h-6 w-6 text-red-400" />}
+                    title="Notifications"
+                    subtitle="Manage push and email alerts"
+                    action={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                    onClick={() => showToast('Notifications', 'Notification settings will be available soon.')}
+                />
+                <SettingsItem
+                    icon={<Palette className="h-6 w-6 text-pink-400" />}
+                    title="Appearance"
+                    subtitle="Customize UI theme and colors"
+                    action={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                    onClick={() => showToast('Appearance', 'Theme customization will be available soon.')}
+                />
+                <SettingsItem
+                    icon={<Globe className="h-6 w-6 text-teal-400" />}
+                    title="Language"
+                    subtitle="English"
+                    action={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                    onClick={() => showToast('Language', 'Language settings will be available soon.')}
+                />
+            </CardContent>
+          </Card>
         </section>
+
 
         <section className="text-center space-y-4 pt-4">
             <Button variant="secondary" className="w-full max-w-sm h-12" onClick={handleLogout}>
