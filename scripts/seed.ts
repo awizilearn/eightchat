@@ -1,28 +1,6 @@
 
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
-import { config } from 'dotenv';
-
-// Load environment variables from .env file
-config();
-
-// Check for the service account key from environment variables
-const serviceAccountKey = process.env.SERVICE_ACCOUNT_KEY;
-if (!serviceAccountKey) {
-  console.error("SERVICE_ACCOUNT_KEY environment variable not set. Please provide the service account JSON key.");
-  process.exit(1);
-}
-
-const serviceAccount = JSON.parse(serviceAccountKey);
-
-// Initialize Firebase Admin SDK
-initializeApp({
-  credential: cert(serviceAccount)
-});
-
-const db = getFirestore();
-const auth = getAuth();
+import * as fs from 'fs';
+import path from 'path';
 
 // Data from placeholder-images.json
 const placeholderImages = {
@@ -38,11 +16,11 @@ const placeholderImages = {
     "content-1": "https://images.unsplash.com/photo-1556139930-c23fa4a4f934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWJzdHJhY3QlMjBnb2xkfGVufDB8fHx8MTc2NTMzNDQxOHww&ixlib=rb-4.1.0&q=80&w=1080",
     "content-2": "https://images.unsplash.com/photo-1617326021886-53d6be1d7154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwaW50ZXJpb3J8ZW58MHx8fHwxNzY1MzMzNDA3fDA&ixlib=rb-4.1.0&q=80&w=1080",
     "content-3": "https://images.unsplash.com/photo-1616671285410-2a676a9a433d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxnb3VybWV0JTIwZm9vZHxlbnwwfHx8fDE3NjUyNjM2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    "content-4": "https://images.unsplash.com/photo-1720031995259-f2d8ea9734fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXNoaW9uJTIwc2tldGNofGVufDB8fHx8MTc2NTMzMzAxNnww&ixlib=rb-4.1.0&q=80&w=1080",
-    "content-5": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    "content-6": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    "content-7": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "content-8": "https://images.unsplash.com/photo-1512390225428-a9d51c817f94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8MTc2NTI3NDA2Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+    "content-4": "https://images.unsplash.com/photo-1720031995259-f2d8ea9734fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXNoaW9uJTIwc2tldGNofGVufDB8fHx8MTc2NTMzMzAxNnww&ixlib*rb-4.1.0&q=80&w=1080",
+    "content-5": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib*rb-4.1.0&q=80&w=1080",
+    "content-6": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib*rb-4.1.0&q=80&w=1080",
+    "content-7": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib*rb-4.1.0&q=80&w=1080",
+    "content-8": "https://images.unsplash.com/photo-1512390225428-a9d51c817f94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2aW50YWdlJTIwY2FtZXJhfGVufDB8fHx8MTc2NTI3NDA2Nnww&ixlib*rb-4.1.0&q=80&w=1080",
 };
 
 
@@ -125,56 +103,36 @@ const creators = [
   }
 ];
 
-const adminUser = {
-    id: 'admin-user',
-    displayName: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-    bio: 'Platform administrator with full access.',
-    photoURL: placeholderImages["admin-avatar"],
-};
-
-
-const seedDatabase = async () => {
-  console.log("Seeding database...");
-  const batch = db.batch();
-
-  // Create admin user in Auth
-  try {
-    const adminAuthUser = await auth.createUser({
-        uid: adminUser.id,
-        email: adminUser.email,
-        password: 'password123',
-        displayName: adminUser.displayName,
-        photoURL: adminUser.photoURL,
+const generateSeedFile = () => {
+    console.log("Generating firestore-seed.json...");
+    
+    const seedData: any = {};
+    
+    creators.forEach(creator => {
+        // Add a placeholder for signalPreKeyBundle
+        const creatorData = { ...creator, signalPreKeyBundle: {} };
+        if (!seedData.users) {
+            seedData.users = {};
+        }
+        seedData.users[creator.id] = creatorData;
     });
-    console.log("Successfully created admin auth user:", adminAuthUser.uid);
-  } catch (error: any) {
-     if (error.code === 'auth/uid-already-exists' || error.code === 'auth/email-already-exists') {
-        console.log("Admin auth user already exists.");
-    } else {
-        console.error("Error creating admin auth user:", error);
-    }
-  }
 
-  // Add admin to Firestore
-  const adminDocRef = db.collection('users').doc(adminUser.id);
-  batch.set(adminDocRef, { ...adminUser, signalPreKeyBundle: {} });
+    const outputPath = path.join(process.cwd(), 'firestore-seed.json');
+    fs.writeFileSync(outputPath, JSON.stringify(seedData, null, 2));
 
-
-  // Note: This seed script doesn't handle Signal keys for creators.
-  // Real users created via the app will have them.
-  creators.forEach(creator => {
-    const docRef = db.collection('users').doc(creator.id);
-    batch.set(docRef, { ...creator, signalPreKeyBundle: {} });
-  });
-
-  try {
-    await batch.commit();
-    console.log("Database seeded successfully with", creators.length, "creators and 1 admin user.");
-  } catch (error) {
-    console.error("Error seeding database:", error);
-  }
+    console.log("\n\x1b[32m✔ Seed file generated successfully!\x1b[0m");
+    console.log(`\n\x1b[1mPath:\x1b[0m ${outputPath}`);
+    console.log("\n\x1b[33m--- How to Import Manually ---\x1b[0m");
+    console.log("1. Go to your Firebase Console: https://console.firebase.google.com/");
+    console.log("2. Select your project.");
+    console.log("3. Go to \x1b[1mFirestore Database\x1b[0m from the left menu.");
+    console.log("4. Click the \x1b[1mthree-dots menu\x_1b[0m at the top of the data panel and select \x1b[1m'Import data'\x1b[0m.");
+    console.log("5. Select the generated `firestore-seed.json` file and start the import.");
+    console.log("\n\x1b[31mIMPORTANT:\x1b[0m This will overwrite existing data in the collections present in the file.");
+    console.log("\nAfter importing, you will need to create user accounts in Firebase Authentication manually for login to work.");
+    console.log("You can do this in the \x1b[1mAuthentication -> Users\x1b[0m tab in your Firebase Console.");
 };
 
-seedDatabase();
+generateSeedFile();
+
+    

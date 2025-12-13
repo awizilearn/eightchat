@@ -40,3 +40,4 @@ yarn-error.log*
 *.*.log
 .firebaserc
 firestore-debug.log
+firebasekey.json

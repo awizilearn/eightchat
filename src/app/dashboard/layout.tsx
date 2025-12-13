@@ -25,6 +25,7 @@ export default function DashboardLayout({
 
   const getProfileLink = () => {
     if (!user) return '/login';
+    // This now correctly points to the user's own creator profile page
     return `/creators/${user.uid}`;
   }
 
@@ -72,7 +73,7 @@ export default function DashboardLayout({
           </div>
 
           {finalNavItems.slice(2).map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.label === 'Profile' && pathname.startsWith('/creators/'));
             return (
               <Link
                 key={item.label}

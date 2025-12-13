@@ -8,74 +8,83 @@ import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 import { ArrowRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import type { UserProfile } from '@/lib/chat-data';
-import { collection, query, where, documentId, getDocs, doc } from 'firebase/firestore';
+import type { UserProfile, Content } from '@/lib/chat-data';
+import { collection, query, where, documentId } from 'firebase/firestore';
 import { CreatorCard } from '@/components/creators/creator-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { ContentCard } from '@/components/creators/content-card';
 
-function SubscribedCreators() {
+function SubscribedContentFeed() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    // Get current user's profile to read their subscriptions
     const userProfileRef = useMemo(() => {
         if (!user || !firestore) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
+
     const { data: userProfileDoc, loading: userProfileLoading } = useDoc(userProfileRef);
     const userProfile = userProfileDoc?.data() as UserProfile;
-    
     const subscriptions = userProfile?.subscriptions || [];
 
-    const creatorsQuery = useMemo(() => {
+    const subscribedCreatorsQuery = useMemo(() => {
         if (!firestore || subscriptions.length === 0) return null;
         return query(collection(firestore, 'users'), where(documentId(), 'in', subscriptions));
     }, [firestore, subscriptions]);
 
-    const { data: creatorsData, loading: creatorsLoading } = useCollection(creatorsQuery);
-    
-    const creators = useMemo(() => {
+    const { data: creatorsData, loading: creatorsLoading } = useCollection(subscribedCreatorsQuery);
+
+    const allContent = useMemo(() => {
         if (!creatorsData) return [];
-        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
+        let content: (Content & { creator: UserProfile })[] = [];
+        creatorsData.docs.forEach(doc => {
+            const creator = { id: doc.id, ...doc.data() } as UserProfile & { id: string };
+            if (creator.content) {
+                const creatorContent = creator.content.map(c => ({
+                    ...c,
+                    // Attach creator info to each content piece
+                    creator: {
+                        id: creator.id,
+                        displayName: creator.displayName,
+                        photoURL: creator.photoURL,
+                    } as UserProfile,
+                }));
+                content = [...content, ...creatorContent];
+            }
+        });
+        // Simple sort by title for now, could be timestamp in a real app
+        return content.sort((a, b) => a.title.localeCompare(b.title));
     }, [creatorsData]);
 
     const loading = userProfileLoading || creatorsLoading;
 
     if (loading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[...Array(4)].map((_, i) => (
-                     <Card className="overflow-hidden" key={i}>
-                        <CardContent className="p-0">
-                            <div className="relative h-40 w-full">
-                                <Skeleton className="h-full w-full" />
+                    <Card className="group overflow-hidden relative" key={i}>
+                        <Skeleton className="w-full aspect-[3/2]" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                        <div className="absolute bottom-0 left-0 p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Skeleton className="h-5 w-5 rounded-full" />
+                                <Skeleton className="h-5 w-32" />
                             </div>
-                            <div className="p-4 pt-0 -mt-10 relative z-10 flex items-end gap-4">
-                                <Skeleton className="h-20 w-20 rounded-full border-4 border-card" />
-                                <div className="pb-2 space-y-2">
-                                    <Skeleton className="h-5 w-24" />
-                                    <Skeleton className="h-4 w-16" />
-                                </div>
-                            </div>
-                            <div className="px-4 pb-4 space-y-2">
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-3/4" />
-                            </div>
-                        </CardContent>
+                        </div>
                     </Card>
                 ))}
             </div>
-        )
+        );
     }
-
-    if (creators.length === 0) {
+    
+    if (allContent.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-lg border-2 border-dashed border-border">
                 <Search className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="font-headline text-2xl font-bold">Découvrez de nouveaux créateurs</h3>
                 <p className="text-muted-foreground mt-2 mb-6 max-w-md">
-                    Vous n'êtes abonné à aucun créateur pour le moment. Explorez la communauté pour trouver du contenu qui vous inspire.
+                    Votre fil d'actualité est vide. Abonnez-vous à des créateurs pour voir leur contenu ici.
                 </p>
                 <Button asChild>
                     <Link href="/discover">
@@ -88,14 +97,13 @@ function SubscribedCreators() {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {creators.map((creator) => (
-                <CreatorCard key={creator.id} creator={creator} />
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {allContent.map((contentItem) => (
+                <ContentCard key={`${contentItem.creator.id}-${contentItem.id}`} content={contentItem} />
             ))}
         </div>
-    )
+    );
 }
-
 
 export default function HomePage() {
   const { user } = useUser();
@@ -114,10 +122,7 @@ export default function HomePage() {
         </div>
 
         <section className="mb-16">
-            <h2 className="font-headline text-3xl font-bold mb-6">
-                Vos Abonnements
-            </h2>
-            <SubscribedCreators />
+            <SubscribedContentFeed />
         </section>
 
         <Separator className="my-12" />
