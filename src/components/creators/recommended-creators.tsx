@@ -4,9 +4,10 @@ import { useEffect, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { recommendContent } from '@/ai/flows/content-recommendation';
 import { CreatorCard } from './creator-card';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 import { collection, query, where, documentId, getDocs, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/chat-data';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 export function RecommendedCreators() {
   const { user } = useUser();
@@ -15,7 +16,7 @@ export function RecommendedCreators() {
   const [loading, setLoading] = useState(true);
 
   // Get current user's profile to read their subscriptions
-  const userProfileRef = useMemo(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);

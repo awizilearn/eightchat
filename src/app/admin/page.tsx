@@ -22,8 +22,9 @@ import {
 } from 'recharts';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/chat-data';
+import type { UserProfile, ModerationAction } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 const COLORS = {
     createur: 'hsl(var(--chart-1))',
@@ -105,22 +106,21 @@ function AdminDashboardSkeleton() {
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
 
-  const usersQuery = useMemo(() => {
+  const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
   }, [firestore]);
-  const { data: usersData, loading: usersLoading } = useCollection(usersQuery);
+  const { data: users, loading: usersLoading } = useCollection<UserProfile>(usersQuery);
 
-  const moderationQuery = useMemo(() => {
+  const moderationQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'moderation-actions');
   }, [firestore]);
-  const { data: moderationData, loading: moderationLoading } = useCollection(moderationQuery);
+  const { data: moderationActions, loading: moderationLoading } = useCollection<ModerationAction>(moderationQuery);
 
   const { totalUsers, totalCreators, roleDistribution } = useMemo(() => {
-    if (!usersData) return { totalUsers: 0, totalCreators: 0, roleDistribution: [] };
+    if (!users) return { totalUsers: 0, totalCreators: 0, roleDistribution: [] };
 
-    const users = usersData.docs.map(doc => doc.data() as UserProfile);
     const roles = users.reduce((acc, user) => {
         acc[user.role] = (acc[user.role] || 0) + 1;
         return acc;
@@ -137,11 +137,11 @@ export default function AdminDashboardPage() {
         totalCreators: roles['createur'] || 0,
         roleDistribution: distribution,
     };
-  }, [usersData]);
+  }, [users]);
 
   const totalModerationActions = useMemo(() => {
-    return moderationData?.docs.length || 0;
-  }, [moderationData]);
+    return moderationActions?.length || 0;
+  }, [moderationActions]);
 
 
   const loading = usersLoading || moderationLoading;

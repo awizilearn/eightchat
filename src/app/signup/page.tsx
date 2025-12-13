@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/provider';
 
 export default function SignUpStepOnePage() {
-  const { user, loading } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<'abonne' | 'createur' | ''>('');
 
-  if (loading || user) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#1D1C1A]">
         Chargement...

@@ -23,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 
 // Define status types and their corresponding badge styles
@@ -101,19 +102,15 @@ export default function UserManagementPage() {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const usersQuery = useMemo(() => {
+  const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'users'), orderBy('displayName'));
   }, [firestore]);
 
-  const { data: usersData, loading } = useCollection(usersQuery);
-
-  const users = useMemo(() => {
-    if (!usersData) return [];
-    return usersData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
-  }, [usersData]);
+  const { data: users, loading } = useCollection<UserProfile & { id: string }>(usersQuery);
 
   const filteredUsers = useMemo(() => {
+    if (!users) return [];
     if (!searchTerm) return users;
     return users.filter(user =>
       user.displayName.toLowerCase().includes(searchTerm.toLowerCase())

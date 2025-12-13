@@ -10,6 +10,8 @@ import {
 
 type FirebaseRef = Query | DocumentReference;
 
+type MemoFirebase<T> = T & {__memo?: boolean};
+
 // This is a custom hook that memoizes a Firestore query or document reference.
 // It's important to prevent re-renders when the query or reference hasn't changed.
 export function useMemoFirebase<T extends FirebaseRef | null>(
@@ -23,8 +25,8 @@ export function useMemoFirebase<T extends FirebaseRef | null>(
   if (newRef) {
     if (ref.current) {
         // Both are queries
-        if (newRef instanceof Query && ref.current instanceof Query) {
-            if (queryEqual(newRef, ref.current)) {
+        if ('_query' in newRef && '_query' in ref.current) {
+            if (queryEqual(newRef as Query, ref.current as Query)) {
                 return ref.current as T;
             }
         } 
@@ -42,5 +44,9 @@ export function useMemoFirebase<T extends FirebaseRef | null>(
 
 
   ref.current = newRef;
+  const memoized = newRef as MemoFirebase<T>;
+  if (memoized) {
+    memoized.__memo = true;
+  }
   return newRef;
 }

@@ -13,23 +13,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/chat-data';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 
 function FeaturedCreators() {
     const firestore = useFirestore();
 
-    const creatorsQuery = useMemo(() => {
+    const creatorsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         // Get 4 creators to feature
         return query(collection(firestore, 'users'), where('role', '==', 'createur'), limit(4));
     }, [firestore]);
 
-    const { data: creatorsData, loading } = useCollection(creatorsQuery);
-
-    const creators = useMemo(() => {
-        if (!creatorsData) return [];
-        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
-    }, [creatorsData]);
+    const { data: creators, loading } = useCollection(creatorsQuery);
 
     if (loading) {
         return (
@@ -53,7 +49,7 @@ function FeaturedCreators() {
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {creators.map((creator) => (
+            {creators && creators.map((creator) => (
                 <CreatorCard key={creator.id} creator={creator} />
             ))}
         </div>

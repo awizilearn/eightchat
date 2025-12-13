@@ -7,9 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { Lock, Edit, Calendar, Check, Rocket, Bitcoin, CreditCard } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Lock, Edit, Calendar, Check, Rocket, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 function BitcoinIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -22,13 +25,66 @@ function BitcoinIcon(props: React.SVGProps<SVGSVGElement>) {
 export default function NewPostPage() {
   const [caption, setCaption] = useState('');
   const [access, setAccess] = useState<'public' | 'subscribers' | 'pay-per-view'>('pay-per-view');
-  const [includedTiers, setIncludedTiers] = useState<string[]>(['VIP Gold']);
+  const [price, setPrice] = useState('9.99');
+  const [includedTiers, setIncludedTiers] = useState<string[]>(['Gold']);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
 
   const toggleTier = (tier: string) => {
     setIncludedTiers(prev => 
       prev.includes(tier) ? prev.filter(t => t !== tier) : [...prev, tier]
     );
   };
+
+  const handlePublish = async () => {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Erreur",
+            description: "Vous devez être connecté pour publier."
+        });
+        return;
+    }
+    setIsPublishing(true);
+
+    const newContent = {
+        id: `content-${Date.now()}`,
+        title: caption.split('\n')[0] || "Nouveau contenu",
+        type: 'video', // Hardcoded for now
+        imageUrl: "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGdvbGR8ZW58MHx8fHwxNzY1MzM0NDE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+        // This logic needs to be more robust
+        tier: includedTiers.includes('Gold') ? 'Gold' : (includedTiers.includes('Silver') ? 'Silver' : 'Bronze'),
+        // Add more fields as necessary based on your data model
+        caption: caption,
+        price: access === 'pay-per-view' ? parseFloat(price) : 0,
+    };
+    
+    try {
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, {
+            content: arrayUnion(newContent)
+        });
+        toast({
+            title: "Publication réussie !",
+            description: "Votre nouveau contenu est maintenant en ligne.",
+        });
+        router.push('/dashboard');
+    } catch (error) {
+        console.error("Error publishing content:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur de publication",
+            description: "Une erreur est survenue lors de la publication de votre contenu.",
+        });
+    } finally {
+        setIsPublishing(false);
+    }
+  };
+
 
   return (
     <main className="p-4 space-y-6 pb-24">
@@ -100,7 +156,7 @@ export default function NewPostPage() {
                         <label className="text-sm font-medium text-muted-foreground">SET PRICE</label>
                          <div className="relative mt-1">
                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">$</span>
-                            <Input defaultValue="9.99" className="h-14 bg-background/50 text-lg font-bold pl-8 pr-20"/>
+                            <Input value={price} onChange={(e) => setPrice(e.target.value)} className="h-14 bg-background/50 text-lg font-bold pl-8 pr-20"/>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                 <BitcoinIcon className="h-6 w-6 text-orange-400" />
                                 <CreditCard className="h-6 w-6 text-muted-foreground" />
@@ -113,7 +169,7 @@ export default function NewPostPage() {
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">INCLUDED IN TIERS</label>
                         <div className="grid grid-cols-3 gap-2 mt-1">
-                            {['VIP Gold', 'Silver', 'Bronze'].map(tier => (
+                            {['Gold', 'Silver', 'Bronze'].map(tier => (
                                 <Button 
                                     key={tier}
                                     onClick={() => toggleTier(tier)}
@@ -151,8 +207,8 @@ export default function NewPostPage() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t border-border">
          <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
             <Button variant="secondary" size="lg" className="h-12">Save Draft</Button>
-            <Button size="lg" className="h-12">
-                Publish Now 
+            <Button size="lg" className="h-12" onClick={handlePublish} disabled={isPublishing}>
+                {isPublishing ? 'Publishing...' : 'Publish Now'}
                 <Rocket className="h-4 w-4 ml-2"/>
             </Button>
          </div>

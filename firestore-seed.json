@@ -1,4 +1,3 @@
-
 {
   "users": {
     "elena-moreau": {
@@ -60,7 +59,7 @@
           "id": "content-4",
           "title": "Fashion Sketchbook",
           "type": "article",
-          "imageUrl": "https://images.unsplash.com/photo-1720031995259-f2d8ea9734fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXNoaW9uJTIwc2tldGNofGVufDB8fHx8MTc2NTMzMzAxNnww&ixlib*rb-4.1.0&q=80&w=1080",
+          "imageUrl": "https://images.unsplash.com/photo-1720031995259-f2d8ea9734fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXNoaW9uJTIwc2tldGNofGVufDB8fHx8MTc2NTMzMzAxNnww&ixlib=rb-4.1.0&q=80&w=1080",
           "tier": "Silver"
         }
       ],
@@ -125,7 +124,7 @@
       "bio": "Capturing emotion on canvas. Follow my process from blank slate to finished piece.",
       "category": "Oil Painting",
       "photoURL": "https://images.unsplash.com/photo-1707000414103-c7c65b336e95?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpc3QlMjBwYWludHxlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "bannerUrl": "https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8MTc2NTI3MDIzMzkzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "bannerUrl": "https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8MTc2NTI3MDYzNnww&ixlib=rb-4.1.0&q=80&w=1080",
       "tiers": [
         {
           "name": "Bronze",
@@ -162,14 +161,14 @@
           "id": "content-5",
           "title": "Canvas Dreams",
           "type": "image",
-          "imageUrl": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib*rb-4.1.0&q=80&w=1080",
+          "imageUrl": "https://images.unsplash.com/photo-1578301996581-bf7caec556c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxvaWwlMjBwYWludGluZ3xlbnwwfHx8fDE3NjUzNjY3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
           "tier": "Bronze"
         },
         {
           "id": "content-6",
           "title": "Night Cityscape",
           "type": "image",
-          "imageUrl": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib*rb-4.1.0&q=80&w=1080",
+          "imageUrl": "https://images.unsplash.com/photo-1515825452884-0de18ec8d031?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuaWdodCUyMGNpdHlzY2FwZXxlbnwwfHx8fDE3NjUzNjEzOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
           "tier": "Gold"
         }
       ],
@@ -220,7 +219,7 @@
           "id": "content-7",
           "title": "Manuscript",
           "type": "article",
-          "imageUrl": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib*rb-4.1.0&q=80&w=1080",
+          "imageUrl": "https://images.unsplash.com/photo-1763225037262-75d0cb46f9c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYW5kd3JpdHRlbiUyMG1hbnVzY3JpcHR8ZW58MHx8fHwxNzY1MzY2NzAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
           "tier": "Bronze"
         },
         {
@@ -235,5 +234,3 @@
     }
   }
 }
-
-    

@@ -1,4 +1,3 @@
-// This file is populated with the Firebase configuration for your web app.
 export const firebaseConfig = {
   "projectId": "studio-8669415397-a6d87",
   "appId": "1:866782566182:web:3a83b318e40786e15a53e7",

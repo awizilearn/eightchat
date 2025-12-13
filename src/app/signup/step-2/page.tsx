@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase/provider';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { generateSignalKeys } from '@/lib/signal-protocol';
@@ -55,7 +55,7 @@ function AppleIcon(props: React.SVGProps<SVGSVGElement>) {
 function SignUpStepTwoContent() {
   const auth = useAuth();
   const firestore = useFirestore();
-  const { user, loading } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -69,7 +69,7 @@ function SignUpStepTwoContent() {
   const roleName = role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!isUserLoading && user) {
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef).then((docSnap) => {
         if (docSnap.exists()) {
@@ -80,7 +80,7 @@ function SignUpStepTwoContent() {
         }
       });
     }
-  }, [user, loading, router, firestore]);
+  }, [user, isUserLoading, router, firestore]);
 
    useEffect(() => {
     if (!role) {
@@ -173,7 +173,7 @@ function SignUpStepTwoContent() {
     }
   };
 
-  if (loading || user || !role) {
+  if (isUserLoading || user || !role) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#1D1C1A]">
         Chargement...

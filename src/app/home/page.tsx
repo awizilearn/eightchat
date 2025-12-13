@@ -14,12 +14,13 @@ import { CreatorCard } from '@/components/creators/creator-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentCard } from '@/components/creators/content-card';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 function SubscribedContentFeed() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const userProfileRef = useMemo(() => {
+    const userProfileRef = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
@@ -28,7 +29,7 @@ function SubscribedContentFeed() {
     const userProfile = userProfileDoc?.data() as UserProfile;
     const subscriptions = userProfile?.subscriptions || [];
 
-    const subscribedCreatorsQuery = useMemo(() => {
+    const subscribedCreatorsQuery = useMemoFirebase(() => {
         if (!firestore || subscriptions.length === 0) return null;
         return query(collection(firestore, 'users'), where(documentId(), 'in', subscriptions));
     }, [firestore, subscriptions]);
@@ -38,8 +39,7 @@ function SubscribedContentFeed() {
     const allContent = useMemo(() => {
         if (!creatorsData) return [];
         let content: (Content & { creator: UserProfile })[] = [];
-        creatorsData.docs.forEach(doc => {
-            const creator = { id: doc.id, ...doc.data() } as UserProfile & { id: string };
+        creatorsData.forEach(creator => {
             if (creator.content) {
                 const creatorContent = creator.content.map(c => ({
                     ...c,

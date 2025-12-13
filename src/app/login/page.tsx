@@ -13,8 +13,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useAuth, useUser, useFirestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useUser } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -64,8 +63,7 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
-  const { user, loading } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -75,10 +73,10 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!isUserLoading && user) {
       router.push('/home');
     }
-  }, [user, loading, router]);
+  }, [user, isUserLoading, router]);
   
   const handleSocialSignIn = async (providerName: 'google' | 'apple' | 'twitter') => {
     if (!auth) return;
@@ -125,7 +123,7 @@ export default function LoginPage() {
     }
   };
 
-  if (loading || user) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         Chargement...
@@ -205,21 +203,21 @@ export default function LoginPage() {
                 className="w-full h-12 text-md"
                 variant="outline"
                 onClick={() => handleSocialSignIn('google')}
-            >
+             >
                 <GoogleIcon className="h-5 w-5" />
             </Button>
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
                 onClick={() => handleSocialSignIn('twitter')}
-            >
+             >
                 <XIcon className="h-5 w-5" />
             </Button>
              <Button
                 className="w-full h-12 text-md"
                 variant="outline"
                 onClick={() => handleSocialSignIn('apple')}
-            >
+             >
                 <AppleIcon className="h-6 w-6" />
             </Button>
         </div>

@@ -11,6 +11,7 @@ import { fr } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
 import { Timestamp, doc } from 'firebase/firestore';
 import { useUser, useDoc, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 
 const ConversationItem = ({
@@ -29,7 +30,7 @@ const ConversationItem = ({
     return convo.participantIds.find(id => id !== user?.uid);
   }, [convo.participantIds, user]);
 
-  const participantRef = useMemo(() => {
+  const participantRef = useMemoFirebase(() => {
       if (!firestore || !otherParticipantId) return null;
       return doc(firestore, 'users', otherParticipantId);
   }, [firestore, otherParticipantId]);

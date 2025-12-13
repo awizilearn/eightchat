@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import type { UserProfile } from '@/lib/chat-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 const navItems = [
   { href: '/admin', icon: BarChart, label: 'Dashboard' },
@@ -56,7 +57,7 @@ export default function AdminLayout({
   const firestore = useFirestore();
   const router = useRouter();
 
-  const userProfileRef = useMemo(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);

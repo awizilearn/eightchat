@@ -20,6 +20,7 @@ import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/chat-data';
 import { useMemo } from 'react';
 import { Skeleton } from '../ui/skeleton';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 export function Header() {
   const { user } = useUser();
@@ -48,7 +49,7 @@ function UserMenu() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const userProfileRef = useMemo(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);

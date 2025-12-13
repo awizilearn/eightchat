@@ -135,11 +135,11 @@ export default function ChatView({ conversationId }: { conversationId: string })
 
   const messages: Message[] = useMemo(() => {
     if (!messagesData) return [];
-    return messagesData.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Message));
+    return messagesData.map((doc) => ({ id: doc.id, ...doc } as Message));
   }, [messagesData]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !messages) return;
     messages.forEach(async (msg) => {
       if (msg.senderId === user.uid || msg.isPaid || !msg.text || decryptedMessages.has(msg.id)) {
         return;
@@ -243,7 +243,7 @@ export default function ChatView({ conversationId }: { conversationId: string })
   const otherParticipantId = useMemo(() => {
     if (!conversation) return null;
     return conversation.participantIds.find(id => id !== user?.uid);
-  }, [conversation, user]);
+}, [conversation, user]);
 
 
   return (

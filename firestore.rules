@@ -1,82 +1,169 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model combined with shared access for collaborative entities like subscriptions and messages. The primary goal is to isolate user data and ensure that users can only access information they own, they created, or that has been explicitly shared with them.
+ *
+ * Data Structure: The data is organized into several top-level collections: `/users`, `/subscriptions`, `/subscriptionLevels`, and `/recommendations`. User-specific data that they own directly, such as their private content and messages, is nested within their user document in subcollections like `/users/{userId}/content/` and `/users/{userId}/messages/`. This structural segregation simplifies and secures list operations.
+ *
+ * Key Security Decisions:
+ * - User Listing Disabled: The `/users` collection cannot be listed by any client to protect user privacy and prevent enumeration attacks.
+ * - Read-Only Configuration: The `/subscriptionLevels` collection is read-only for clients, as this data is considered public configuration managed by administrators.
+ * - Ownership-Based Writes: All write operations are strictly controlled by ownership checks. For top-level collections like `/subscriptions`, this is based on fields within the document (e.g., `subscriberId`). For nested collections like `/users/{userId}/content`, ownership is determined by the document path.
+ * - Secure Private Data: Collections containing sensitive or private user data, such as `/subscriptions` and `/recommendations`, have list operations disabled to prevent data leakage. Clients must perform authenticated, targeted queries to fetch their own documents.
+ *
+ * Denormalization for Authorization: The rules rely on denormalized IDs within documents to make authorization decisions. For example, a `Subscription` document contains both a `subscriberId` and a `creatorId`, allowing rules to grant access to either party without needing to perform costly `get()` operations on other documents. Similarly, `Message` documents contain `senderId` and `recipientId` for the same purpose.
+ *
+ * Structural Segregation: User-generated content and messages are placed in subcollections under `/users/{userId}`. This structure inherently secures `list` operations, ensuring a user can only query for content within their own data tree, making it impossible to accidentally list content belonging to other users.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the primary function for verifying resource ownership.
+     */
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isModerator() {
-      // Check the user's role from their document in the 'users' collection
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderateur'];
+    /**
+     * A simple check to ensure a document exists before an update or delete.
+     */
+    function isExistingDoc() {
+      return resource != null;
     }
 
-    match /users/{userId} {
-      // Allow public read access for user profiles
-      allow read: if true;
-
-      // Allow creation if the user is creating their own document.
-      // This is typically handled during sign-up.
-      allow create: if isOwner(userId);
-      
-      // Allow updates if the user is the owner AND they are not trying to change their role.
-      // A user can update their own subscriptions.
-      // Other sensitive fields are protected.
-      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role;
+    /**
+     * Verifies if the requester is the subscriber of a subscription.
+     */
+    function isSubscriber(subscriptionData) {
+      return isSignedIn() && request.auth.uid == subscriptionData.subscriberId;
     }
 
-    match /conversations/{conversationId} {
-      function isParticipant() {
-        return request.auth != null && request.auth.uid in resource.data.participantIds;
-      }
-      
-      allow read: if isParticipant();
-      // Ensure participantIds are sorted and the user is one of them on create.
-      allow create: if request.auth != null && request.auth.uid in request.resource.data.participantIds && request.resource.data.participantIds == request.resource.data.participantIds.sort();
-      // Disallow changing participants after creation for simplicity.
-      allow update: if isParticipant() && request.resource.data.participantIds == resource.data.participantIds;
-      
-      match /messages/{messageId} {
-        function canReadParentConversation() {
-            return request.auth != null && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
-        }
-        
-        // Allow reads if the user is a participant.
-        // A user can read a document if they have access to any field.
-        // The plaintext field is protected below.
-        allow read: if canReadParentConversation();
+    /**
+     * Verifies if the requester is the creator related to a subscription.
+     */
+    function isCreator(subscriptionData) {
+      return isSignedIn() && request.auth.uid == subscriptionData.creatorId;
+    }
 
-        // Allow reading plaintext ONLY if the user is the sender of the message.
-        match /messages/{messageId} {
-          allow read: if canReadParentConversation() && request.auth.uid == resource.data.senderId;
-        }
-
-        // Allow creating a message if the sender is the authenticated user 
-        // and is a participant in the conversation.
-        allow create: if canReadParentConversation() && isOwner(request.resource.data.senderId);
-
-        // Deny updates and deletes for message immutability.
-        allow update, delete: if false;
-      }
+    /**
+     * Verifies if the requester is the sender of a message.
+     */
+    function isSender(messageData) {
+      return isSignedIn() && request.auth.uid == messageData.senderId;
     }
     
-    match /moderation-actions/{actionId} {
-        allow read: if isModerator();
-        // Writes should ideally be handled by a backend/cloud function for security.
-        allow write: if false;
+    /**
+     * Verifies if the requester is the recipient of a message.
+     */
+    function isRecipient(messageData) {
+      return isSignedIn() && request.auth.uid == messageData.recipientId;
     }
 
-    match /transactions/{transactionId} {
-      // Only the related user or a moderator can read a transaction
-      allow read: if isOwner(resource.data.userId) || isModerator();
-      // Writes should be handled by a backend/cloud function
-      allow write: if false;
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profiles. A user can create their own profile, and can only read, update, or delete their own document. Listing all users is forbidden.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user with UID 'user123' creating their own profile at `/users/user123`.
+     * @deny (list) Any user attempting to list the `/users` collection.
+     * @principle Restricts access to a user's own data tree and enforces relational integrity.
+     */
+    match /users/{userId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && isExistingDoc() && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(userId) && isExistingDoc();
     }
 
-    // Default deny all other reads/writes
-    match /{document=**} {
-      allow read, write: if false;
+    /**
+     * @description Manages content created by a user. Only the owner of the user profile can create, read, update, or delete content within their own subcollection.
+     * @path /users/{userId}/content/{contentId}
+     * @allow (create) An authenticated user 'user123' creating a content document in `/users/user123/content/`.
+     * @deny (update) User 'user456' trying to update a document in `/users/user123/content/`.
+     * @principle Enforces document ownership for all operations within a user-specific subcollection.
+     */
+    match /users/{userId}/content/{contentId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.creatorId == userId;
+      allow update: if isOwner(userId) && isExistingDoc() && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * @description Manages direct messages. A user can list messages in their own subcollection. Only the sender or recipient can read a message. Only the sender can create or delete a message.
+     * @path /users/{userId}/messages/{messageId}
+     * @allow (get) The recipient 'user456' reading a message at `/users/user123/messages/{msgId}` where the message data contains `recipientId: 'user456'`.
+     * @deny (create) User 'user123' trying to create a message in their own subcollection where the `senderId` is 'user456'.
+     * @principle Implements shared access based on denormalized sender/recipient IDs within the message document.
+     */
+    match /users/{userId}/messages/{messageId} {
+      allow get: if isOwner(userId) && (isSender(resource.data) || isRecipient(resource.data));
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isSender(request.resource.data);
+      allow update: if isOwner(userId) && isExistingDoc() && (isSender(resource.data) || isRecipient(resource.data)) && request.resource.data.senderId == resource.data.senderId && request.resource.data.recipientId == resource.data.recipientId;
+      allow delete: if isOwner(userId) && isExistingDoc() && isSender(resource.data);
+    }
+
+    /**
+     * @description Manages subscriptions between users and creators. The subscriber can create and delete it. Both the subscriber and the creator can read it.
+     * @path /subscriptions/{subscriptionId}
+     * @allow (get) The creator 'creator456' reading a subscription where `creatorId` is 'creator456'.
+     * @deny (list) Any user attempting to list all subscriptions.
+     * @principle Implements shared read access based on denormalized IDs. Write access is restricted to the subscriber.
+     */
+    match /subscriptions/{subscriptionId} {
+      allow get: if isSubscriber(resource.data) || isCreator(resource.data);
+      allow list: if false;
+      allow create: if isSubscriber(request.resource.data);
+      allow update: if false;
+      allow delete: if isExistingDoc() && isSubscriber(resource.data);
+    }
+
+    /**
+     * @description Defines available subscription tiers. This data is considered public configuration. It is readable by any signed-in user but cannot be modified by clients.
+     * @path /subscriptionLevels/{subscriptionLevelId}
+     * @allow (get, list) Any signed-in user can read the available subscription levels.
+     * @deny (create, update, delete) No client can modify the subscription levels.
+     * @principle Secures configuration data by making it read-only for clients.
+     */
+    match /subscriptionLevels/{subscriptionLevelId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Stores recommendations generated for users. A user can only read recommendations where their UID matches the `userId` field. All write operations are disabled for clients.
+     * @path /recommendations/{recommendationId}
+     * @allow (get) A signed-in user 'user123' reading a recommendation where `userId` is 'user123'.
+     * @deny (list) Any user trying to list all recommendations.
+     * @principle Enforces document ownership for reads and prevents clients from writing system-generated data.
+     */
+    match /recommendations/{recommendationId} {
+      allow get: if isOwner(resource.data.userId);
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 type ActionStatus = 'All Actions' | 'Approved' | 'Rejected' | 'Warnings' | 'Banned' | 'Muted';
 type DateRange = '24hours' | '7days' | '30days' | 'all';
@@ -98,24 +99,21 @@ export default function ContentModerationPage() {
     const [dateRange, setDateRange] = useState<DateRange>('7days');
     const [selectedModerator, setSelectedModerator] = useState<string>('all');
 
-    const moderationQuery = useMemo(() => {
+    const moderationQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'moderation-actions'), orderBy('timestamp', 'desc'));
     }, [firestore]);
 
-    const { data: moderationData, loading: actionsLoading } = useCollection(moderationQuery);
-
-    const actions = useMemo(() => {
-        if (!moderationData) return [];
-        return moderationData.docs.map(doc => ({ id: doc.id, ...doc.data() } as ModerationAction & {id: string}));
-    }, [moderationData]);
+    const { data: actions, loading: actionsLoading } = useCollection<ModerationAction & {id: string}>(moderationQuery);
     
     const uniqueModerators = useMemo(() => {
+        if (!actions) return [];
         const moderatorIds = new Set(actions.map(a => a.moderatorId));
         return Array.from(moderatorIds);
     }, [actions]);
 
     const filteredData = useMemo(() => {
+      if (!actions) return [];
       let dateLimit: Date | null = null;
       if (dateRange === '24hours') dateLimit = subDays(new Date(), 1);
       if (dateRange === '7days') dateLimit = subDays(new Date(), 7);

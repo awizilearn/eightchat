@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Timestamp } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 interface MessageBubbleProps {
   message: Message;
@@ -112,7 +113,10 @@ function UnlockedContent({ message, isOwnMessage = false }: { message: Message; 
 export function MessageBubble({ message, isOwnMessage, isContentUnlocked, onUnlockContent }: MessageBubbleProps) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const senderRef = !isOwnMessage && firestore ? doc(firestore, 'users', message.senderId) : null;
+  const senderRef = useMemoFirebase(() => {
+      return !isOwnMessage && firestore ? doc(firestore, 'users', message.senderId) : null;
+  }, [isOwnMessage, firestore, message.senderId]);
+
   const { data: senderDoc } = useDoc(senderRef);
   const sender = senderDoc?.data() as UserProfile;
 

@@ -27,14 +27,10 @@ export default function MessagesPage() {
     );
   }, [user, firestore]);
 
-  const { data: conversationsData, loading: conversationsLoading } = useCollection(conversationsQuery);
-
-  const conversations = useMemo(() => {
-    if (!conversationsData) return [];
-    return conversationsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Conversation));
-  }, [conversationsData]);
+  const { data: conversations, loading: conversationsLoading } = useCollection<Conversation>(conversationsQuery);
 
   useEffect(() => {
+    if (!conversations) return;
     if (!selectedConversationId && conversations.length > 0) {
       // If no conversation is selected from the URL, default to the first one.
       setSelectedConversationId(conversations[0].id);
@@ -58,7 +54,7 @@ export default function MessagesPage() {
     <div className="flex h-screen bg-background text-foreground">
       <div className="w-full max-w-sm border-r border-sidebar-border hidden md:flex flex-col">
         <ConversationList
-          conversations={conversations}
+          conversations={conversations || []}
           selectedConversationId={selectedConversationId}
           onSelectConversation={handleSelectConversation}
           loading={loading}
@@ -81,7 +77,7 @@ export default function MessagesPage() {
         {/* On mobile, the chat view is often handled by navigating to a new screen.
             For this example, we show the chat view, and the user can navigate back
             to the conversation list (which would be a separate mobile view). */}
-        {!selectedConversationId && conversations.length === 0 && !loading && (
+        {!selectedConversationId && (!conversations || conversations.length === 0) && !loading && (
              <div className="h-full flex-col items-center justify-center flex p-4">
                  <div className="flex flex-col items-center gap-4 text-center">
                     <div className="p-4 bg-sidebar-accent rounded-full">

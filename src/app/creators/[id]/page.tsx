@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubscriptionTiers } from '@/components/creators/subscription-tiers';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3VudGFpbnN8ZW58MHx8fHwxNzY1MzkxOTk3fDA&ixlib=rb-4.1.0&q=80&w=1080';
 
@@ -110,7 +111,7 @@ export default function CreatorProfilePage({
   const { user } = useUser();
   const firestore = useFirestore();
   
-  const creatorRef = useMemo(() => {
+  const creatorRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'users', params.id);
   }, [firestore, params.id]);

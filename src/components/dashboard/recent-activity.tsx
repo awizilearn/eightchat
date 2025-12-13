@@ -19,6 +19,7 @@ import { useMemo } from 'react';
 import { Skeleton } from '../ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 function BitcoinIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -40,7 +41,7 @@ function TransactionItem({ tx }: { tx: Transaction & { id: string } }) {
   
   // To get subscriber name, we need to fetch the user profile
   const firestore = useFirestore();
-  const subscriberRef = useMemo(() => {
+  const subscriberRef = useMemoFirebase(() => {
     if (!firestore || !tx.subscriberId) return null;
     return doc(firestore, 'users', tx.subscriberId);
   }, [firestore, tx.subscriberId]);
@@ -98,7 +99,7 @@ function ActivitySkeleton() {
 export function RecentActivity({ userId }: { userId: string }) {
   const firestore = useFirestore();
   
-  const transactionsQuery = useMemo(() => {
+  const transactionsQuery = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return query(
         collection(firestore, 'transactions'), 
@@ -107,19 +108,14 @@ export function RecentActivity({ userId }: { userId: string }) {
     );
   }, [firestore, userId]);
   
-  const { data: transactionsData, loading } = useCollection(transactionsQuery);
-
-  const transactions = useMemo(() => {
-    if (!transactionsData) return [];
-    return transactionsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction & { id: string }));
-  }, [transactionsData]);
+  const { data: transactions, loading } = useCollection<Transaction & { id: string }>(transactionsQuery);
 
   return (
     <div className="space-y-4">
         <h2 className="text-lg font-semibold">Recent Activity</h2>
         {loading ? (
             <ActivitySkeleton />
-        ) : transactions.length > 0 ? (
+        ) : transactions && transactions.length > 0 ? (
             <ul className="space-y-1">
             {transactions.map((tx) => (
                 <TransactionItem key={tx.id} tx={tx} />

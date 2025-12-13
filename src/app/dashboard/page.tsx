@@ -11,11 +11,12 @@ import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { useMemo, useEffect } from 'react';
+import { useEffect } from 'react';
 import { UserProfile } from '@/lib/chat-data';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 function DashboardSkeleton() {
     return (
@@ -87,7 +88,7 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const userProfileRef = useMemo(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
