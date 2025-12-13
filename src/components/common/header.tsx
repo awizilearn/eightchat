@@ -22,10 +22,11 @@ import { useMemo } from 'react';
 import { Skeleton } from '../ui/skeleton';
 
 export function Header() {
+  const { user } = useUser();
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center">
-        <Link href="/discover" className="flex items-center gap-2 mr-6">
+        <Link href={user ? "/home" : "/"} className="flex items-center gap-2 mr-6">
           <Crown className="h-8 w-8 text-primary" />
           <span className="font-headline text-2xl font-bold tracking-tight text-primary whitespace-nowrap">
             Golden Enclave
@@ -69,9 +70,14 @@ function UserMenu() {
 
   if (!user) {
     return (
-      <Button onClick={() => router.push('/login')}>
-        Login
-      </Button>
+        <div className='flex items-center gap-2'>
+            <Button variant="ghost" onClick={() => router.push('/login')}>
+                Log In
+            </Button>
+            <Button onClick={() => router.push('/signup')}>
+                Sign Up
+            </Button>
+        </div>
     );
   }
 

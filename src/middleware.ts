@@ -13,19 +13,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
     
-  // Public paths are the onboarding/welcome page, login, and signup flow.
-  const publicPaths = ['/', '/login', '/signup'];
+  // Public paths are the landing page, welcome/onboarding, login, and signup flow.
+  const publicPaths = ['/', '/welcome', '/login', '/signup'];
   const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
 
   // This cookie is set by Firebase Auth on the client side
   const authCookie = request.cookies.get('firebaseAuth');
 
   if (!authCookie && !isPublicPath) {
-     // if the path is not public and there is no auth cookie, redirect to login.
+     // if the path is not public and there is no auth cookie, redirect to landing page.
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // If user is logged in and tries to access a public path like login or signup, redirect to home.
+  // If user is logged in and tries to access a public path, redirect to home.
   if (authCookie && isPublicPath) {
      return NextResponse.redirect(new URL('/home', request.url));
   }

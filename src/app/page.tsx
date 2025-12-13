@@ -1,66 +1,69 @@
 'use client';
 
-import { ArrowRight, MessageSquare, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  type CarouselApi,
-} from '@/components/ui/carousel';
-import React from 'react';
-import { cn } from '@/lib/utils';
-import placeholderImages from '@/lib/placeholder-images.json';
+import { Header } from '@/components/common/header';
+import { CreatorCard } from '@/components/creators/creator-card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+import { collection, query, where, limit } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/chat-data';
 
-const onboardingSteps = [
-  {
-    icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-    title: 'Unlock Exclusive Worlds',
-    description:
-      'Subscribe directly to your favorite creators for premium, unseen content.',
-    image: placeholderImages.placeholderImages.find(p => p.id === 'onboarding-image-1'),
-  },
-  {
-    icon: <MessageSquare className="h-10 w-10 text-primary" />,
-    title: 'Encrypted Messaging',
-    description:
-      'Chat securely with creators and fans using end-to-end encryption.',
-    image: placeholderImages.placeholderImages.find(p => p.id === 'onboarding-image-2'),
-  },
-  {
-    icon: <Star className="h-10 w-10 text-primary" />,
-    title: 'Support Creators',
-    description: 'Your subscription directly supports the artists and creators you love.',
-    image: placeholderImages.placeholderImages.find(p => p.id === 'onboarding-image-3'),
-  },
-];
 
-export default function WelcomePage() {
-  const router = useRouter();
-  const { user, loading } = useUser();
-  const [api, setApi] = React.useState<CarouselApi>();
-  const [current, setCurrent] = React.useState(0);
-  const [count, setCount] = React.useState(0);
+function FeaturedCreators() {
+    const firestore = useFirestore();
 
-  React.useEffect(() => {
-    if (!api) {
-      return;
+    const creatorsQuery = useMemo(() => {
+        if (!firestore) return null;
+        // Get 4 creators to feature
+        return query(collection(firestore, 'users'), where('role', '==', 'createur'), limit(4));
+    }, [firestore]);
+
+    const { data: creatorsData, loading } = useCollection(creatorsQuery);
+
+    const creators = useMemo(() => {
+        if (!creatorsData) return [];
+        return creatorsData.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile & { id: string }));
+    }, [creatorsData]);
+
+    if (loading) {
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                    <Card className="overflow-hidden" key={i}>
+                        <CardContent className="p-0">
+                            <Skeleton className="h-40 w-full" />
+                            <div className="p-4 pt-0 -mt-10 relative z-10 flex items-end gap-4">
+                                <Skeleton className="h-20 w-20 rounded-full border-4 border-card" />
+                                <div className="pb-2 space-y-2">
+                                    <Skeleton className="h-5 w-24" />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        );
     }
 
-    setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap());
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {creators.map((creator) => (
+                <CreatorCard key={creator.id} creator={creator} />
+            ))}
+        </div>
+    );
+}
 
-    api.on('select', () => {
-      setCurrent(api.selectedScrollSnap());
-    });
-  }, [api]);
+
+export default function LandingPage() {
+  const router = useRouter();
+  const { user, loading } = useUser();
 
   if (loading) {
     return <div className="flex h-screen w-full items-center justify-center bg-background">Loading...</div>
@@ -72,79 +75,35 @@ export default function WelcomePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-between bg-background p-4 sm:p-6">
-      <div className="w-full max-w-md text-right">
-        <Button variant="link" className="text-muted-foreground" onClick={() => router.push('/login')}>SKIP</Button>
-      </div>
-
-      <main className="flex w-full max-w-md flex-col items-center text-center">
-        <Carousel setApi={setApi} className="w-full">
-          <CarouselContent>
-            {onboardingSteps.map((step, index) => (
-              <CarouselItem key={index}>
-                <div className="p-1">
-                  <Card className="bg-transparent border-none shadow-none">
-                    <CardContent className="flex flex-col items-center justify-center p-0 gap-8">
-                       <div className="relative w-full aspect-[4/3] max-w-sm overflow-hidden rounded-xl">
-                         {step.image && (
-                           <Image
-                            src={step.image.imageUrl}
-                            alt={step.title}
-                            fill
-                            className="object-cover"
-                            data-ai-hint={step.image.imageHint}
-                          />
-                         )}
-                       </div>
-                       <div className="space-y-2">
-                        <h1 className="font-headline text-4xl font-bold leading-tight tracking-tight">
-                            {step.title}
-                        </h1>
-                        <p className="max-w-xs text-base text-muted-foreground">
-                            {step.description}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+    <div className="flex min-h-screen flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+            <section className="container mx-auto px-4 py-20 text-center">
+                <h1 className="font-headline text-5xl md:text-7xl font-extrabold tracking-tight">
+                    Enter the <span className="text-primary">Golden Enclave</span>
+                </h1>
+                <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
+                    Unlock exclusive content, connect with creators, and support the arts you love. Your gateway to a more intimate and secure creator economy.
+                </p>
+                <div className="mt-8 flex justify-center gap-4">
+                    <Button size="lg" asChild className="h-12 text-base">
+                        <Link href="/welcome">
+                            Get Started
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                        </Link>
+                    </Button>
                 </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+            </section>
 
-        <div className="py-4 flex justify-center gap-2">
-            {Array.from({ length: count }).map((_, i) => (
-              <div
-                key={i}
-                className={cn('h-2 w-2 rounded-full transition-all', current === i ? 'bg-primary w-4' : 'bg-border')}
-              />
-            ))}
-        </div>
-        
-        <div className="mt-8 flex w-full flex-col gap-4">
-          <Button
-            size="lg"
-            className="h-12 text-base"
-            onClick={() => api?.scrollNext()}
-            disabled={current === count - 1}
-          >
-            NEXT
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          
-          <Button
-            size="lg"
-            className={cn("h-12 text-base", current === count - 1 ? "flex" : "hidden")}
-            onClick={() => router.push('/signup')}
-          >
-            Get Started
-          </Button>
-        </div>
-      </main>
+            <section className="container mx-auto px-4 pb-24">
+                 <h2 className="text-3xl font-bold text-center mb-10">Featured Creators</h2>
+                 <FeaturedCreators />
+            </section>
+        </main>
 
-      <footer className="mt-12 text-center text-xs text-muted-foreground">
-        <p>Already have an account? <Link href="/login" className="font-semibold text-primary hover:underline">Log in</Link></p>
-      </footer>
+        <footer className="container mx-auto px-4 py-6 text-center text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Golden Enclave. All Rights Reserved.</p>
+        </footer>
     </div>
   );
 }
