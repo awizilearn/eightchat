@@ -1,364 +1,150 @@
 {
   "entities": {
     "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
       "description": "Represents a user profile on the Golden Enclave platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "The user's chosen username."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        },
-        "displayName": {
-          "type": "string",
-          "description": "The user's display name (can be different from username)."
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biography or description of the user."
-        },
-        "profilePictureUrl": {
-          "type": "string",
-          "description": "URL of the user's profile picture.",
-          "format": "uri"
-        },
-        "isCreator": {
-          "type": "boolean",
-          "description": "Indicates whether the user is a content creator."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the UserProfile entity." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "email": { "type": "string", "description": "The user's email address.", "format": "email" },
+        "photoURL": { "type": "string", "description": "URL of the user's profile picture.", "format": "uri" },
+        "role": { "type": "string", "enum": ["admin", "abonne", "createur", "moderateur", "agence"] },
+        "signalPreKeyBundle": { "type": "object", "description": "Signal protocol pre-key bundle for E2EE." },
+        "bio": { "type": "string", "description": "A short biography of the user." },
+        "category": { "type": "string", "description": "Category of the creator." },
+        "bannerUrl": { "type": "string", "description": "URL of the creator's banner image.", "format": "uri" },
+        "tiers": { "type": "array", "items": { "$ref": "#/entities/SubscriptionTier" } },
+        "content": { "type": "array", "items": { "$ref": "#/entities/Content" } },
+        "subscriptions": { "type": "array", "items": { "type": "string" }, "description": "Array of creator IDs the user is subscribed to." },
+        "savedContent": { "type": "array", "items": { "type": "string" }, "description": "Array of content IDs the user has saved." }
       },
-      "required": [
-        "id",
-        "username",
-        "email",
-        "displayName"
-      ]
+      "required": ["id", "displayName", "email", "role", "signalPreKeyBundle"]
+    },
+    "SubscriptionTier": {
+      "title": "SubscriptionTier",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "enum": ["Bronze", "Silver", "Gold"] },
+        "price": { "type": "number" },
+        "perks": { "type": "array", "items": { "type": "string" } },
+        "cta": { "type": "string" }
+      },
+      "required": ["name", "price", "perks"]
     },
     "Content": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Content",
       "type": "object",
-      "description": "Represents a piece of content created by a creator.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Content entity."
-        },
-        "creatorId": {
-          "type": "string",
-          "description": "Reference to Creator's UserProfile. (Relationship: UserProfile 1:N Content)"
-        },
-        "title": {
-          "type": "string",
-          "description": "The title of the content."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the content."
-        },
-        "contentUrl": {
-          "type": "string",
-          "description": "URL of the content (e.g., video, audio, text).",
-          "format": "uri"
-        },
-        "uploadDate": {
-          "type": "string",
-          "description": "The date and time when the content was uploaded.",
-          "format": "date-time"
-        },
-        "contentType": {
-          "type": "string",
-          "description": "The type of content (e.g., video, audio, text)."
-        }
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["image", "video", "article"] },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "tier": { "type": "string", "enum": ["Bronze", "Silver", "Gold"] }
       },
-      "required": [
-        "id",
-        "creatorId",
-        "title",
-        "contentUrl",
-        "uploadDate",
-        "contentType"
-      ]
+      "required": ["id", "title", "type", "imageUrl", "tier"]
     },
-    "Subscription": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Subscription",
+    "Conversation": {
+      "title": "Conversation",
       "type": "object",
-      "description": "Represents a user's subscription to a creator's content.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Subscription entity."
-        },
-        "subscriberId": {
-          "type": "string",
-          "description": "Reference to the subscribing UserProfile. (Relationship: UserProfile 1:N Subscription)"
-        },
-        "creatorId": {
-          "type": "string",
-          "description": "Reference to the creator's UserProfile. (Relationship: UserProfile 1:N Subscription)"
-        },
-        "subscriptionDate": {
-          "type": "string",
-          "description": "The date and time when the user subscribed.",
-          "format": "date-time"
-        },
-        "expirationDate": {
-          "type": "string",
-          "description": "The date and time when the subscription expires.",
-          "format": "date-time"
-        },
-        "subscriptionLevelId": {
-          "type": "string",
-          "description": "Reference to SubscriptionLevel entity. (Relationship: SubscriptionLevel 1:N Subscription)"
-        },
-        "paymentMethod": {
-          "type": "string",
-          "description": "The payment method used for the subscription (e.g., Coinbase Commerce, Stripe)."
-        }
+        "participantIds": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "subscriberId",
-        "creatorId",
-        "subscriptionDate",
-        "expirationDate",
-        "paymentMethod"
-      ]
-    },
-    "SubscriptionLevel": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SubscriptionLevel",
-      "type": "object",
-      "description": "Represents different tiers of subscription levels.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the SubscriptionLevel entity."
-        },
-        "levelName": {
-          "type": "string",
-          "description": "The name of the subscription level (e.g., Basic, Premium, VIP)."
-        },
-        "description": {
-          "type": "string",
-          "description": "A description of the benefits included in this subscription level."
-        },
-        "price": {
-          "type": "number",
-          "description": "The price of the subscription level."
-        }
-      },
-      "required": [
-        "id",
-        "levelName",
-        "description",
-        "price"
-      ]
+      "required": ["participantIds", "updatedAt"]
     },
     "Message": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Message",
       "type": "object",
-      "description": "Represents an encrypted direct message between a creator and a subscriber.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Message entity."
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to UserProfile of the sender. (Relationship: UserProfile 1:N Message)"
-        },
-        "recipientId": {
-          "type": "string",
-          "description": "Reference to UserProfile of the recipient. (Relationship: UserProfile 1:N Message)"
-        },
-        "messageText": {
-          "type": "string",
-          "description": "The encrypted text of the message."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The date and time when the message was sent.",
-          "format": "date-time"
-        },
-        "isRead": {
-          "type": "boolean",
-          "description": "Indicates whether the message has been read by the recipient."
-        }
+        "senderId": { "type": "string" },
+        "text": { "type": "string", "description": "Encrypted message content." },
+        "plaintext": { "type": "string", "description": "Sender's copy of the message, unencrypted." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isPaid": { "type": "boolean" },
+        "contentTitle": { "type": "string" },
+        "contentPrice": { "type": "number" },
+        "contentImageUrl": { "type": "string", "format": "uri" },
+        "contentType": { "type": "string", "enum": ["video", "image", "audio", "text"] }
       },
-      "required": [
-        "id",
-        "senderId",
-        "recipientId",
-        "messageText",
-        "timestamp"
-      ]
+      "required": ["senderId", "text", "createdAt"]
     },
-    "Recommendation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Recommendation",
+    "ModerationAction": {
+      "title": "ModerationAction",
       "type": "object",
-      "description": "Represents a content or creator recommendation for a user.",
+      "description": "Represents an action taken by a moderator.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Recommendation entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the UserProfile. (Relationship: UserProfile 1:N Recommendation)"
-        },
-        "contentId": {
-          "type": "string",
-          "description": "Reference to recommended Content (can be null if recommending a creator). (Relationship: Content 1:N Recommendation)"
-        },
-        "creatorId": {
-          "type": "string",
-          "description": "Reference to recommended Creator (can be null if recommending content). (Relationship: UserProfile 1:N Recommendation)"
-        },
-        "reason": {
-          "type": "string",
-          "description": "The reason for the recommendation (e.g., subscription history, similar content)."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The date and time when the recommendation was generated.",
-          "format": "date-time"
-        }
+        "actionType": { "type": "string", "enum": ["contentApproved", "userBanned", "warningIssued", "contentRejected", "userMuted"] },
+        "targetType": { "type": "string", "enum": ["user", "post"] },
+        "targetId": { "type": "string" },
+        "moderatorId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string" },
+        "duration": { "type": "number", "description": "Duration in hours, if applicable." }
       },
-      "required": [
-        "id",
-        "userId",
-        "reason",
-        "timestamp"
-      ]
+      "required": ["actionType", "targetType", "targetId", "moderatorId", "timestamp"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a financial transaction on the platform.",
+      "properties": {
+        "subscriberId": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "type": { "type": "string", "enum": ["sub", "payout", "tip"] },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "method": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["completed", "pending"] }
+      },
+      "required": ["subscriberId", "creatorId", "type", "description", "date", "amount"]
+    },
+    "Task": {
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task for internal teams.",
+      "properties": {
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "done"] },
+        "dueDate": { "type": ["string", "null"], "format": "date-time" },
+        "category": { "type": "string" },
+        "assigneeId": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "hasAlert": { "type": "boolean" }
+      },
+      "required": ["title", "status", "assigneeId", "category"]
+    },
+    "OpsMessage": {
+      "title": "OpsMessage",
+      "type": "object",
+      "description": "Represents a message in the internal Team Ops chat.",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isReadBy": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["senderId", "text", "createdAt"]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com",
+      "apple.com"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores user profile information. Secured by user ID. Includes denormalized data, if required, for authorization in subcollections.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/content/{contentId}",
-        "definition": {
-          "entityName": "Content",
-          "schema": {
-            "$ref": "#/backend/entities/Content"
-          },
-          "description": "Stores content created by users. Secured by user ID and creatorId in the content document.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user (creator)."
-            },
-            {
-              "name": "contentId",
-              "description": "The unique ID of the content."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/subscriptions/{subscriptionId}",
-        "definition": {
-          "entityName": "Subscription",
-          "schema": {
-            "$ref": "#/backend/entities/Subscription"
-          },
-          "description": "Stores subscription information. Access control is based on subscriberId and creatorId.",
-          "params": [
-            {
-              "name": "subscriptionId",
-              "description": "The unique ID of the subscription."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/subscriptionLevels/{subscriptionLevelId}",
-        "definition": {
-          "entityName": "SubscriptionLevel",
-          "schema": {
-            "$ref": "#/backend/entities/SubscriptionLevel"
-          },
-          "description": "Stores information about subscription levels.",
-          "params": [
-            {
-              "name": "subscriptionLevelId",
-              "description": "The unique ID of the subscription level."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/backend/entities/Message"
-          },
-          "description": "Stores direct messages between creators and subscribers. Secured by senderId and recipientId within the message. The 'userId' path parameter should match either the senderId or recipientId in the message.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user (sender or recipient)."
-            },
-            {
-              "name": "messageId",
-              "description": "The unique ID of the message."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/recommendations/{recommendationId}",
-        "definition": {
-          "entityName": "Recommendation",
-          "schema": {
-            "$ref": "#/backend/entities/Recommendation"
-          },
-          "description": "Stores content and creator recommendations for users. Secured by userId.",
-          "params": [
-            {
-              "name": "recommendationId",
-              "description": "The unique ID of the recommendation."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore data structure is designed to support a creator-driven content subscription platform. It prioritizes authorization independence by denormalizing authorization data, ensuring that security rules can be evaluated without complex `get()` calls. The structure also supports secure `list` operations via structural segregation. User profiles, content, subscriptions, subscription levels, messages, and recommendations are structured into collections with clear ownership and access patterns.\n\nSpecifically, Authorization Independence is achieved through path-based ownership for UserProfile and Content. Access to content is controlled by the creatorId field within the Content document, which maps back to a UserProfile. Messages are stored in a subcollection under user profiles for direct messaging, with sender and recipient information contained within each message, eliminating the need to traverse to other collections for validation. Subscriptions are stored at `/subscriptions/{subscriptionId}`. QAPs are ensured via path-based ownership and structural segregation; for instance, listing content is restricted to content created by the currently authenticated user when under their profile.\n\nThis design allows for simple and robust security rules based on `request.auth.uid` and document data, which enhances debuggability and scalability. Timestamps are included in relevant entities (Content, Subscription, Message, Recommendation) to support ordering and filtering of data."
+    "collections": [
+      { "path": "/users", "schema": "#/entities/UserProfile", "description": "Stores user profiles." },
+      { "path": "/conversations", "schema": "#/entities/Conversation", "description": "Stores conversation metadata.", "subcollections": [{ "path": "/messages", "schema": "#/entities/Message", "description": "Messages within a conversation." }] },
+      { "path": "/moderation-actions", "schema": "#/entities/ModerationAction", "description": "Log of all moderator actions." },
+      { "path": "/transactions", "schema": "#/entities/Transaction", "description": "Log of all financial transactions." },
+      { "path": "/tasks", "schema": "#/entities/Task", "description": "Tasks for internal teams." },
+      { "path": "/ops_messages", "schema": "#/entities/OpsMessage", "description": "Messages for internal Team Ops chat." }
+    ]
   }
 }

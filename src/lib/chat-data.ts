@@ -13,6 +13,8 @@ export interface Content {
     type: 'image' | 'video' | 'article';
     imageUrl: string;
     tier: 'Bronze' | 'Silver' | 'Gold';
+    caption?: string;
+    price?: number;
 }
 
 export interface UserProfile {
@@ -29,6 +31,7 @@ export interface UserProfile {
   tiers?: SubscriptionTier[];
   content?: Content[];
   subscriptions?: string[];
+  savedContent?: string[];
 }
 
 
@@ -77,4 +80,23 @@ export interface Transaction {
     method: 'Stripe' | 'ETH' | 'Crypto' | string;
     amount: number;
     status?: 'completed' | 'pending';
+}
+
+export interface Task {
+    id: string;
+    title: string;
+    status: 'todo' | 'in_progress' | 'done';
+    dueDate: Timestamp | null;
+    category: string;
+    assigneeId: string;
+    creatorId?: string; // e.g. the creator this task is related to
+    hasAlert: boolean;
+}
+
+export interface OpsMessage {
+    id: string;
+    senderId: string;
+    text: string;
+    createdAt: Timestamp;
+    isReadBy?: string[];
 }

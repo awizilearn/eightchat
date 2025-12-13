@@ -99,16 +99,24 @@ export default function ChatView({ conversationId }: { conversationId: string })
   const userProfile = userProfileDoc?.data() as UserProfile;
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = window.localStorage.getItem(UNLOCKED_MESSAGES_STORAGE_KEY);
-      if (saved) setUnlockedMessages(new Set(JSON.parse(saved)));
+    // This effect runs only on the client
+    const saved = window.localStorage.getItem(UNLOCKED_MESSAGES_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setUnlockedMessages(new Set(parsed));
+        }
+      } catch (e) {
+        console.error("Failed to parse unlocked messages from localStorage", e);
+        setUnlockedMessages(new Set());
+      }
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(UNLOCKED_MESSAGES_STORAGE_KEY, JSON.stringify(Array.from(unlockedMessages)));
-    }
+    // This effect runs only on the client
+    window.localStorage.setItem(UNLOCKED_MESSAGES_STORAGE_KEY, JSON.stringify(Array.from(unlockedMessages)));
   }, [unlockedMessages]);
 
 

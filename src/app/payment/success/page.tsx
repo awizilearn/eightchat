@@ -4,12 +4,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CheckCircle2, ArrowLeft, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, arrayUnion, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -185,4 +185,24 @@ export default function PaymentSuccessPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function PaymentSuccessPageWrapper() {
+  return (
+    <Suspense fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+            <Card className="w-full max-w-md text-center">
+                <CardHeader>
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/20">
+                        <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
+                    </div>
+                    <CardTitle className="mt-4 text-2xl font-bold">Chargement...</CardTitle>
+                </CardHeader>
+            </Card>
+        </div>
+    }>
+        <PaymentSuccessPage />
+    </Suspense>
+  )
 }
